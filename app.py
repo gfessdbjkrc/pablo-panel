@@ -552,7 +552,7 @@ def make_all_vless_configs(user, host):
 
     configs = []
 
-    # 1.  کانفـیگ پرسرعـت¹ (بستر ایمن TLS و کروم)
+    # 1.  کانفیـگ پرسرعـت | 𝗣𝗔𝗕𝗟𝗢 𝗣𝗔𝗡𝗘𝗟 | 1 (بستر ایمن TLS و کروم)
     c1 = (
         f"vless://{u_uuid}@{host}:443"
         f"?path=%2Fws%2F{u_uuid}"
@@ -568,13 +568,13 @@ def make_all_vless_configs(user, host):
         f"#{encoded_remark}%20%5B1%5D"
     )
     configs.append({
-        "title": " کانفـیگ پرسرعـت¹",
+        "title": "کانفیـگ پرسرعـت | 𝗣𝗔𝗕𝗟𝗢 𝗣𝗔𝗡𝗘𝗟 | 1",
         "desc": "اتصال فوق‌العاده پایدار و بدون قطعی (پیشنهادی)",
         "tag": "HighSpeed 1",
         "config": c1
     })
 
-    # 2.  کانفـیگ پرسرعـت² (EarlyData پینگ فوق پایین)
+    # 2.   کانفیـگ پرسرعـت | 𝗣𝗔𝗕𝗟𝗢 𝗣𝗔𝗡𝗘𝗟 | 2 (EarlyData پینگ فوق پایین)
     c2 = (
         f"vless://{u_uuid}@{host}:443"
         f"?path=%2Fws%2F{u_uuid}%3Fed%3D2560"
@@ -590,13 +590,13 @@ def make_all_vless_configs(user, host):
         f"#{encoded_remark}%20%5B2%5D"
     )
     configs.append({
-        "title": " کانفـیگ پرسرعـت²",
+        "title": "کانفیـگ پرسرعـت | 𝗣𝗔𝗕𝗟𝗢 𝗣𝗔𝗡𝗘𝗟 | 2",
         "desc": "بهینه‌شده با پینگ بسیار پایین مخصوص بازی و وب‌گردی",
         "tag": "HighSpeed 2",
         "config": c2
     })
 
-    # 3.  کانفـیگ پرسرعـت³ (Firefox ALPN)
+    # 3.  کانفیـگ پرسرعـت | 𝗣𝗔𝗕𝗟𝗢 𝗣𝗔𝗡𝗘𝗟 | 3 (Firefox ALPN)
     c3 = (
         f"vless://{u_uuid}@{host}:443"
         f"?path=%2Fws%2F{u_uuid}"
@@ -612,13 +612,13 @@ def make_all_vless_configs(user, host):
         f"#{encoded_remark}%20%5B3%5D"
     )
     configs.append({
-        "title": " کانفـیگ پرسرعـت³",
+        "title": "کانفیـگ پرسرعـت | 𝗣𝗔𝗕𝗟𝗢 𝗣𝗔𝗡𝗘𝗟 | 3",
         "desc": "فرکانس چندگانه و ضد فیلتر مناسب دانلود‌های سنگین",
         "tag": "HighSpeed 3",
         "config": c3
     })
 
-    # 4.  کانفـیگ پرسرعـت⁴ (متد نمونه - فوق‌پایدار همراه اول)
+    # 4.   کانفیـگ پرسرعـت | 𝗣𝗔𝗕𝗟𝗢 𝗣𝗔𝗡𝗘𝗟 | 4 (متد نمونه - فوق‌پایدار همراه اول)
     c4 = (
         f"vless://{u_uuid}@{host}:443"
         f"?path=%2Fws%2F{u_uuid}"
@@ -634,13 +634,13 @@ def make_all_vless_configs(user, host):
         f"#{encoded_remark}%20%5B4%5D"
     )
     configs.append({
-        "title": " کانفـیگ پرسرعـت⁴",
+        "title": "کانفیـگ پرسرعـت | 𝗣𝗔𝗕𝗟𝗢 𝗣𝗔𝗡𝗘𝗟 | 4",
         "desc": "متد بهینه‌سازی شده‌ی نمونه مخصوص دور زدن فیلترینگ شدید همراه اول",
         "tag": "HighSpeed 4",
         "config": c4
     })
 
-    # 5.  کانفـیگ پرسرعـت⁵ (ویژه اپراتور ایرانسل)
+    # 5.  کانفیـگ پرسرعـت | 𝗣𝗔𝗕𝗟𝗢 𝗣𝗔𝗡𝗘𝗟 | 5 (ویژه اپراتور ایرانسل)
     c5 = (
         f"vless://{u_uuid}@{host}:443"
         f"?path=%2Fws%2F{u_uuid}%3Fed%3D2048"
@@ -656,13 +656,13 @@ def make_all_vless_configs(user, host):
         f"#{encoded_remark}%20%5B5%5D"
     )
     configs.append({
-        "title": " کانفـیگ پرسرعـت⁵",
+        "title": "کانفیـگ پرسرعـت | 𝗣𝗔𝗕𝗟𝗢 𝗣𝗔𝗡𝗘𝗟 | 5",
         "desc": "مخصوص ایرانسل با فینگرپرینت متمایز Edge جهت پایداری بالا",
         "tag": "HighSpeed 5",
         "config": c5
     })
 
-    # 6.  کانفـیگ پرسرعـت⁶ (اینترنت خانگی و ADSL)
+    # 6.  کانفیـگ پرسرعـت | 𝗣𝗔𝗕𝗟𝗢 𝗣𝗔𝗡𝗘𝗟 | 6 (اینترنت خانگی و ADSL)
     c6 = (
         f"vless://{u_uuid}@{host}:443"
         f"?path=%2Fws%2F{u_uuid}"
@@ -677,13 +677,13 @@ def make_all_vless_configs(user, host):
         f"#{encoded_remark}%20%5B6%5D"
     )
     configs.append({
-        "title": " کانفـیگ پرسرعـت⁶",
+        "title": "کانفیـگ پرسرعـت | 𝗣𝗔𝗕𝗟𝗢 𝗣𝗔𝗡𝗘𝗟 | 6",
         "desc": "مخصوص مخابرات، شاتل، آسیاتک و پارس‌آنلاین با فینگرپرینت Opera",
         "tag": "HighSpeed 6",
         "config": c6
     })
 
-    # 7.  کانفـیگ پرسرعـت⁷ (مخصوص رایتل و اپراتورهای مجازی)
+    # 7.   کانفیـگ پرسرعـت | 𝗣𝗔𝗕𝗟𝗢 𝗣𝗔𝗡𝗘𝗟 | 7 (مخصوص رایتل و اپراتورهای مجازی)
     c7 = (
         f"vless://{u_uuid}@{host}:443"
         f"?path=%2Fws%2F{u_uuid}%3Fed%3D2560"
@@ -699,13 +699,13 @@ def make_all_vless_configs(user, host):
         f"#{encoded_remark}%20%5B7%5D"
     )
     configs.append({
-        "title": " کانفـیگ پرسرعـت⁷",
+        "title": "کانفیـگ پرسرعـت | 𝗣𝗔𝗕𝗟𝗢 𝗣𝗔𝗡𝗘𝗟 | 7",
         "desc": "شبیه‌سازی بر بستر آندروید سازگار با رایتل و شاتل‌موبایل",
         "tag": "HighSpeed 7",
         "config": c7
     })
 
-    # 8.  کانفـیگ پرسرعـت⁸ (بدون رمزنگاری - پورت 80)
+    # 8.   کانفیـگ پرسرعـت | 𝗣𝗔𝗕𝗟𝗢 𝗣𝗔𝗡𝗘𝗟 | 8 (بدون رمزنگاری - پورت 80)
     c8 = (
         f"vless://{u_uuid}@{host}:80"
         f"?path=%2Fws%2F{u_uuid}"
@@ -716,13 +716,13 @@ def make_all_vless_configs(user, host):
         f"#{encoded_remark}%20%5B8%5D"
     )
     configs.append({
-        "title": " کانفـیگ پرسرعـت⁸",
+        "title": "کانفیـگ پرسرعـت | 𝗣𝗔𝗕𝗟𝗢 𝗣𝗔𝗡𝗘𝗟 | 8",
         "desc": "پورت اضطراری ۸۰ بدون رمزنگاری TLS (برای زمان اختلالات شدید گیت‌وی)",
         "tag": "HighSpeed 8",
         "config": c8
     })
 
-    # 9.  کانفـیگ پرسرعـت⁹ (بای‌پاس هوشمند)
+    # 9.   کانفیـگ پرسرعـت | 𝗣𝗔𝗕𝗟𝗢 𝗣𝗔𝗡𝗘𝗟 | 9 (بای‌پاس هوشمند)
     c9 = (
         f"vless://{u_uuid}@{host}:443"
         f"?path=%2Fws%2F{u_uuid}"
@@ -738,13 +738,13 @@ def make_all_vless_configs(user, host):
         f"#{encoded_remark}%20%5B9%5D"
     )
     configs.append({
-        "title": " کانفـیگ پرسرعـت⁹",
+        "title": "کانفیـگ پرسرعـت | 𝗣𝗔𝗕𝗟𝗢 𝗣𝗔𝗡𝗘𝗟 | 9",
         "desc": "دارای فینگرپرینت کاملاً رندوم برای دور زدن فیلترینگ‌های هوشمند",
         "tag": "HighSpeed 9",
         "config": c9
     })
 
-    # 10.  کانفـیگ پرسرعـت¹⁰ (مخصوص کلودفلر/CDN)
+    # 10.   کانفیـگ پرسرعـت | 𝗣𝗔𝗕𝗟𝗢 𝗣𝗔𝗡𝗘𝗟 | 10 (مخصوص کلودفلر/CDN)
     c10 = (
         f"vless://{u_uuid}@{host}:443"
         f"?path=%2Fws%2F{u_uuid}%3Fhost%3D{host}"
@@ -760,7 +760,7 @@ def make_all_vless_configs(user, host):
         f"#{encoded_remark}%20%5B10%5D"
     )
     configs.append({
-        "title": "کانفـیگ پرسرعـت¹⁰",
+        "title": "کانفیـگ پرسرعـت | 𝗣𝗔𝗕𝗟𝗢 𝗣𝗔𝗡𝗘𝗟 | 10",
         "desc": "مخصوص دور زدن پکت‌لاسی زیرساخت شبکه با روت بهینه‌سازی شده CDN",
         "tag": "HighSpeed 10",
         "config": c10
