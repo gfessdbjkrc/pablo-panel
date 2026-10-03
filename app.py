@@ -31,9 +31,8 @@ DB_PATH = "users.db"
 XRAY_CONFIG_PATH = "xray_config.json"
 NGINX_CONFIG_PATH = "nginx.conf"
 
-# کاربرای آنلاین (توی حافظه)
-ONLINE_USERS = {}  # {user_name: last_seen_timestamp}
-ONLINE_THRESHOLD = 90  # ثانیه
+ONLINE_USERS = {}
+ONLINE_THRESHOLD = 90
 
 # =========================================================
 # دیتابیس
@@ -524,7 +523,7 @@ http {{
 
 
 # =========================================================
-# ساخت کانفیگ‌های ۱۰ گانه فوق پرسرعت (تست پینگ همه اپراتورها)
+# ساخت کانفیگ‌های ۱۰ گانه
 # =========================================================
 
 def make_all_vless_configs(user, host):
@@ -540,19 +539,19 @@ def make_all_vless_configs(user, host):
     u_uuid = user["uuid"]
     name = user["name"]
 
-    remark_text = (
-        f"{name} | "
-        f"{used_gb:.2f} GB/"
-        f"{quota_gb:.2f} GB "
-        f"(باقی {remaining_gb:.2f} GB) | "
-        f"{days_left}د"
-    )
-
-    encoded_remark = urllib.parse.quote(remark_text)
+    # فقط نام کانفیگ‌ها تغییر کرده است
+    def config_remark(number):
+        remark_text = (
+            f"کانفیـگ پرسرعـت | "
+            f"𝗣𝗔𝗕𝗟𝗢 𝗣𝗔𝗡𝗘𝗟 | "
+            f"{number} | "
+            f"{name}"
+        )
+        return urllib.parse.quote(remark_text)
 
     configs = []
 
-    # 1.  کانفیـگ پرسرعـت | 𝗣𝗔𝗕𝗟𝗢 𝗣𝗔𝗡𝗘𝗟 | 1 (بستر ایمن TLS و کروم)
+    # 1
     c1 = (
         f"vless://{u_uuid}@{host}:443"
         f"?path=%2Fws%2F{u_uuid}"
@@ -565,7 +564,7 @@ def make_all_vless_configs(user, host):
         f"&type=ws"
         f"&allowInsecure=0"
         f"&sni={host}"
-        f"#{encoded_remark}%20%5B1%5D"
+        f"#{config_remark(1)}"
     )
     configs.append({
         "title": "کانفیـگ پرسرعـت | 𝗣𝗔𝗕𝗟𝗢 𝗣𝗔𝗡𝗘𝗟 | 1",
@@ -574,7 +573,7 @@ def make_all_vless_configs(user, host):
         "config": c1
     })
 
-    # 2.   کانفیـگ پرسرعـت | 𝗣𝗔𝗕𝗟𝗢 𝗣𝗔𝗡𝗘𝗟 | 2 (EarlyData پینگ فوق پایین)
+    # 2
     c2 = (
         f"vless://{u_uuid}@{host}:443"
         f"?path=%2Fws%2F{u_uuid}%3Fed%3D2560"
@@ -587,7 +586,7 @@ def make_all_vless_configs(user, host):
         f"&type=ws"
         f"&allowInsecure=0"
         f"&sni={host}"
-        f"#{encoded_remark}%20%5B2%5D"
+        f"#{config_remark(2)}"
     )
     configs.append({
         "title": "کانفیـگ پرسرعـت | 𝗣𝗔𝗕𝗟𝗢 𝗣𝗔𝗡𝗘𝗟 | 2",
@@ -596,7 +595,7 @@ def make_all_vless_configs(user, host):
         "config": c2
     })
 
-    # 3.  کانفیـگ پرسرعـت | 𝗣𝗔𝗕𝗟𝗢 𝗣𝗔𝗡𝗘𝗟 | 3 (Firefox ALPN)
+    # 3
     c3 = (
         f"vless://{u_uuid}@{host}:443"
         f"?path=%2Fws%2F{u_uuid}"
@@ -609,7 +608,7 @@ def make_all_vless_configs(user, host):
         f"&type=ws"
         f"&allowInsecure=0"
         f"&sni={host}"
-        f"#{encoded_remark}%20%5B3%5D"
+        f"#{config_remark(3)}"
     )
     configs.append({
         "title": "کانفیـگ پرسرعـت | 𝗣𝗔𝗕𝗟𝗢 𝗣𝗔𝗡𝗘𝗟 | 3",
@@ -618,7 +617,7 @@ def make_all_vless_configs(user, host):
         "config": c3
     })
 
-    # 4.   کانفیـگ پرسرعـت | 𝗣𝗔𝗕𝗟𝗢 𝗣𝗔𝗡𝗘𝗟 | 4 (متد نمونه - فوق‌پایدار همراه اول)
+    # 4
     c4 = (
         f"vless://{u_uuid}@{host}:443"
         f"?path=%2Fws%2F{u_uuid}"
@@ -631,7 +630,7 @@ def make_all_vless_configs(user, host):
         f"&type=ws"
         f"&allowInsecure=0"
         f"&sni={host}"
-        f"#{encoded_remark}%20%5B4%5D"
+        f"#{config_remark(4)}"
     )
     configs.append({
         "title": "کانفیـگ پرسرعـت | 𝗣𝗔𝗕𝗟𝗢 𝗣𝗔𝗡𝗘𝗟 | 4",
@@ -640,7 +639,7 @@ def make_all_vless_configs(user, host):
         "config": c4
     })
 
-    # 5.  کانفیـگ پرسرعـت | 𝗣𝗔𝗕𝗟𝗢 𝗣𝗔𝗡𝗘𝗟 | 5 (ویژه اپراتور ایرانسل)
+    # 5
     c5 = (
         f"vless://{u_uuid}@{host}:443"
         f"?path=%2Fws%2F{u_uuid}%3Fed%3D2048"
@@ -653,7 +652,7 @@ def make_all_vless_configs(user, host):
         f"&type=ws"
         f"&allowInsecure=0"
         f"&sni={host}"
-        f"#{encoded_remark}%20%5B5%5D"
+        f"#{config_remark(5)}"
     )
     configs.append({
         "title": "کانفیـگ پرسرعـت | 𝗣𝗔𝗕𝗟𝗢 𝗣𝗔𝗡𝗘𝗟 | 5",
@@ -662,7 +661,7 @@ def make_all_vless_configs(user, host):
         "config": c5
     })
 
-    # 6.  کانفیـگ پرسرعـت | 𝗣𝗔𝗕𝗟𝗢 𝗣𝗔𝗡𝗘𝗟 | 6 (اینترنت خانگی و ADSL)
+    # 6
     c6 = (
         f"vless://{u_uuid}@{host}:443"
         f"?path=%2Fws%2F{u_uuid}"
@@ -674,7 +673,7 @@ def make_all_vless_configs(user, host):
         f"&type=ws"
         f"&allowInsecure=0"
         f"&sni={host}"
-        f"#{encoded_remark}%20%5B6%5D"
+        f"#{config_remark(6)}"
     )
     configs.append({
         "title": "کانفیـگ پرسرعـت | 𝗣𝗔𝗕𝗟𝗢 𝗣𝗔𝗡𝗘𝗟 | 6",
@@ -683,7 +682,7 @@ def make_all_vless_configs(user, host):
         "config": c6
     })
 
-    # 7.   کانفیـگ پرسرعـت | 𝗣𝗔𝗕𝗟𝗢 𝗣𝗔𝗡𝗘𝗟 | 7 (مخصوص رایتل و اپراتورهای مجازی)
+    # 7
     c7 = (
         f"vless://{u_uuid}@{host}:443"
         f"?path=%2Fws%2F{u_uuid}%3Fed%3D2560"
@@ -696,7 +695,7 @@ def make_all_vless_configs(user, host):
         f"&type=ws"
         f"&allowInsecure=0"
         f"&sni={host}"
-        f"#{encoded_remark}%20%5B7%5D"
+        f"#{config_remark(7)}"
     )
     configs.append({
         "title": "کانفیـگ پرسرعـت | 𝗣𝗔𝗕𝗟𝗢 𝗣𝗔𝗡𝗘𝗟 | 7",
@@ -705,7 +704,7 @@ def make_all_vless_configs(user, host):
         "config": c7
     })
 
-    # 8.   کانفیـگ پرسرعـت | 𝗣𝗔𝗕𝗟𝗢 𝗣𝗔𝗡𝗘𝗟 | 8 (بدون رمزنگاری - پورت 80)
+    # 8
     c8 = (
         f"vless://{u_uuid}@{host}:80"
         f"?path=%2Fws%2F{u_uuid}"
@@ -713,7 +712,7 @@ def make_all_vless_configs(user, host):
         f"&encryption=none"
         f"&host={host}"
         f"&type=ws"
-        f"#{encoded_remark}%20%5B8%5D"
+        f"#{config_remark(8)}"
     )
     configs.append({
         "title": "کانفیـگ پرسرعـت | 𝗣𝗔𝗕𝗟𝗢 𝗣𝗔𝗡𝗘𝗟 | 8",
@@ -722,7 +721,7 @@ def make_all_vless_configs(user, host):
         "config": c8
     })
 
-    # 9.   کانفیـگ پرسرعـت | 𝗣𝗔𝗕𝗟𝗢 𝗣𝗔𝗡𝗘𝗟 | 9 (بای‌پاس هوشمند)
+    # 9
     c9 = (
         f"vless://{u_uuid}@{host}:443"
         f"?path=%2Fws%2F{u_uuid}"
@@ -735,7 +734,7 @@ def make_all_vless_configs(user, host):
         f"&type=ws"
         f"&allowInsecure=0"
         f"&sni={host}"
-        f"#{encoded_remark}%20%5B9%5D"
+        f"#{config_remark(9)}"
     )
     configs.append({
         "title": "کانفیـگ پرسرعـت | 𝗣𝗔𝗕𝗟𝗢 𝗣𝗔𝗡𝗘𝗟 | 9",
@@ -744,7 +743,7 @@ def make_all_vless_configs(user, host):
         "config": c9
     })
 
-    # 10.   کانفیـگ پرسرعـت | 𝗣𝗔𝗕𝗟𝗢 𝗣𝗔𝗡𝗘𝗟 | 10 (مخصوص کلودفلر/CDN)
+    # 10
     c10 = (
         f"vless://{u_uuid}@{host}:443"
         f"?path=%2Fws%2F{u_uuid}%3Fhost%3D{host}"
@@ -757,7 +756,7 @@ def make_all_vless_configs(user, host):
         f"&type=ws"
         f"&allowInsecure=0"
         f"&sni={host}"
-        f"#{encoded_remark}%20%5B10%5D"
+        f"#{config_remark(10)}"
     )
     configs.append({
         "title": "کانفیـگ پرسرعـت | 𝗣𝗔𝗕𝗟𝗢 𝗣𝗔𝗡𝗘𝗟 | 10",
@@ -852,7 +851,6 @@ def users_page():
     )
 
 
-# API: کاربرای آنلاین (برای آپدیت زنده)
 @app.route("/api/online_users")
 def api_online_users():
     if "admin" not in session:
