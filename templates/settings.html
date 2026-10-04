@@ -3,100 +3,40 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-
     <title>تنظیمات پنل | PABLO PANEL</title>
-
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Vazirmatn:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
-
     <style>
         * {
             box-sizing: border-box;
             margin: 0;
             padding: 0;
-            font-family: 'Vazirmatn', sans-serif;
+            font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, Tahoma, sans-serif;
         }
 
         body {
             min-height: 100vh;
             background:
-                radial-gradient(circle at top right, rgba(0, 140, 255, .18), transparent 35%),
-                radial-gradient(circle at bottom left, rgba(0, 80, 255, .12), transparent 35%),
+                radial-gradient(circle at top right, rgba(0, 140, 255, .15), transparent 35%),
+                radial-gradient(circle at bottom left, rgba(0, 80, 255, .1), transparent 35%),
                 #050914;
             color: #fff;
             display: flex;
             justify-content: center;
             align-items: center;
             padding: 20px;
-            overflow-x: hidden;
-        }
-
-        /* ذرات شناور پس‌زمینه */
-        body::before {
-            content: '';
-            position: fixed;
-            top: 0;
-            left: 0;
-            right: 0;
-            bottom: 0;
-            background-image:
-                radial-gradient(circle at 20% 50%, rgba(0, 170, 255, 0.05) 1px, transparent 1px),
-                radial-gradient(circle at 80% 20%, rgba(0, 170, 255, 0.05) 1px, transparent 1px);
-            background-size: 50px 50px;
-            z-index: -1;
-            animation: float 20s linear infinite;
-        }
-
-        @keyframes float {
-            0% { transform: translateY(0px); }
-            100% { transform: translateY(-50px); }
         }
 
         .container {
             width: 100%;
-            max-width: 520px;
-            animation: fadeInUp 0.6s ease-out;
-        }
-
-        @keyframes fadeInUp {
-            from {
-                opacity: 0;
-                transform: translateY(30px);
-            }
-            to {
-                opacity: 1;
-                transform: translateY(0);
-            }
+            max-width: 480px;
         }
 
         .card {
-            background: rgba(8, 15, 30, .92);
-            border: 1px solid rgba(0, 153, 255, .35);
-            border-radius: 24px;
-            padding: 35px 30px;
-            box-shadow:
-                0 0 35px rgba(0, 119, 255, .12),
-                inset 0 0 25px rgba(0, 119, 255, .025);
-            backdrop-filter: blur(15px);
-            position: relative;
-            overflow: hidden;
-        }
-
-        .card::before {
-            content: '';
-            position: absolute;
-            top: 0;
-            left: 0;
-            right: 0;
-            height: 3px;
-            background: linear-gradient(90deg, transparent, #00aaff, transparent);
-            animation: shine 3s linear infinite;
-        }
-
-        @keyframes shine {
-            0% { transform: translateX(-100%); }
-            100% { transform: translateX(100%); }
+            background: rgba(8, 15, 30, .95);
+            border: 1px solid rgba(0, 153, 255, .3);
+            border-radius: 20px;
+            padding: 30px 25px;
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.5);
+            backdrop-filter: blur(10px);
         }
 
         .header {
@@ -104,103 +44,48 @@
             margin-bottom: 25px;
         }
 
-        .header-icon {
-            width: 65px;
-            height: 65px;
-            margin: 0 auto 15px;
-            background: linear-gradient(135deg, #0077ff, #00b7ff);
-            border-radius: 18px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            box-shadow: 0 10px 30px rgba(0, 140, 255, 0.4);
-            animation: pulse 2s ease-in-out infinite;
-        }
-
-        @keyframes pulse {
-            0%, 100% { box-shadow: 0 10px 30px rgba(0, 140, 255, 0.4); }
-            50% { box-shadow: 0 10px 40px rgba(0, 140, 255, 0.7); }
-        }
-
-        .header-icon svg {
-            width: 32px;
-            height: 32px;
-            fill: #fff;
-        }
-
         .title {
-            font-size: 26px;
+            font-size: 24px;
             font-weight: 800;
-            margin-bottom: 8px;
-            background: linear-gradient(135deg, #fff, #00aaff);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-            background-clip: text;
+            margin-bottom: 6px;
+            color: #fff;
         }
 
         .subtitle {
-            color: #8290a8;
+            color: #71819a;
             font-size: 13px;
-            font-weight: 400;
         }
 
         .current {
             display: flex;
             align-items: center;
             justify-content: space-between;
-            margin-bottom: 22px;
-            padding: 14px 16px;
-            background: rgba(0, 140, 255, .06);
-            border: 1px solid rgba(0, 140, 255, .15);
-            border-radius: 13px;
-            color: #8494ad;
+            margin-bottom: 20px;
+            padding: 12px 15px;
+            background: rgba(0, 140, 255, .08);
+            border: 1px solid rgba(0, 140, 255, .2);
+            border-radius: 12px;
             font-size: 13px;
-            font-weight: 500;
-        }
-
-        .current-info {
-            display: flex;
-            align-items: center;
-            gap: 10px;
-        }
-
-        .current-info svg {
-            width: 18px;
-            height: 18px;
-            fill: #00aaff;
         }
 
         .current strong {
             color: #00aaff;
-            font-weight: 700;
             margin-right: 5px;
         }
 
         .copy-btn {
-            background: rgba(0, 170, 255, 0.1);
+            background: rgba(0, 170, 255, 0.15);
             border: 1px solid rgba(0, 170, 255, 0.3);
             color: #00aaff;
-            padding: 6px 10px;
-            border-radius: 8px;
+            padding: 4px 10px;
+            border-radius: 6px;
             cursor: pointer;
             font-size: 11px;
-            font-weight: 600;
-            font-family: 'Vazirmatn', sans-serif;
-            transition: all 0.2s;
-            display: flex;
-            align-items: center;
-            gap: 5px;
+            font-weight: bold;
         }
 
         .copy-btn:hover {
-            background: rgba(0, 170, 255, 0.2);
-            transform: scale(1.05);
-        }
-
-        .copy-btn svg {
-            width: 13px;
-            height: 13px;
-            fill: currentColor;
+            background: rgba(0, 170, 255, 0.25);
         }
 
         .group {
@@ -208,19 +93,11 @@
         }
 
         label {
-            display: flex;
-            align-items: center;
-            gap: 7px;
+            display: block;
             margin-bottom: 8px;
             color: #aebbd0;
             font-size: 13px;
             font-weight: 600;
-        }
-
-        label svg {
-            width: 15px;
-            height: 15px;
-            fill: #00aaff;
         }
 
         .input-wrapper {
@@ -229,35 +106,447 @@
 
         input {
             width: 100%;
-            height: 52px;
-            border-radius: 14px;
+            height: 50px;
+            border-radius: 12px;
             border: 1px solid #1d3150;
             outline: none;
             background: #08111f;
             color: #fff;
             padding: 0 15px;
-            font-size: 15px;
-            transition: .25s;
-            font-family: 'Vazirmatn', sans-serif;
+            font-size: 14px;
+            transition: .2s;
         }
 
         input[type="password"] {
-            padding-left: 50px;
-            letter-spacing: 2px;
+            padding-left: 45px;
         }
 
         input:focus {
             border-color: #008cff;
-            box-shadow: 0 0 15px rgba(0, 140, 255, .2);
-            background: #0a1424;
-        }
-
-        input::placeholder {
-            color: #4a5568;
-            font-size: 13px;
+            box-shadow: 0 0 10px rgba(0, 140, 255, .15);
         }
 
         .toggle-password {
             position: absolute;
-            left: 12px;
-            
+            left: 10px;
+            top: 50%;
+            transform: translateY(-50%);
+            background: none;
+            border: none;
+            cursor: pointer;
+            color: #4a5568;
+            padding: 5px;
+            display: flex;
+            align-items: center;
+        }
+
+        .toggle-password:hover {
+            color: #00aaff;
+        }
+
+        .toggle-password svg {
+            width: 20px;
+            height: 20px;
+            fill: currentColor;
+        }
+
+        /* قدرت پسورد */
+        .password-strength {
+            margin-top: 6px;
+            height: 4px;
+            background: #1c2d42;
+            border-radius: 2px;
+            overflow: hidden;
+            display: none;
+        }
+
+        .strength-bar {
+            height: 100%;
+            width: 0%;
+            transition: 0.3s;
+        }
+
+        .strength-text {
+            margin-top: 4px;
+            font-size: 11px;
+            display: none;
+        }
+
+        .button {
+            width: 100%;
+            height: 52px;
+            border: 0;
+            border-radius: 12px;
+            cursor: pointer;
+            color: white;
+            font-size: 15px;
+            font-weight: bold;
+            background: linear-gradient(135deg, #0077ff, #00b7ff);
+            box-shadow: 0 5px 15px rgba(0, 130, 255, .2);
+            transition: .2s;
+        }
+
+        .button:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 8px 20px rgba(0, 150, 255, .3);
+        }
+
+        .button:disabled {
+            opacity: .6;
+            cursor: wait;
+        }
+
+        .back {
+            display: block;
+            text-align: center;
+            margin-top: 18px;
+            color: #71819a;
+            text-decoration: none;
+            font-size: 13px;
+            transition: .2s;
+        }
+
+        .back:hover {
+            color: #00aaff;
+        }
+
+        .message {
+            display: none;
+            margin-bottom: 18px;
+            padding: 12px;
+            border-radius: 10px;
+            text-align: center;
+            font-size: 13px;
+            font-weight: bold;
+        }
+
+        .message.error {
+            display: block;
+            background: rgba(255, 45, 45, .1);
+            border: 1px solid rgba(255, 45, 45, .2);
+            color: #ff6b6b;
+        }
+
+        .message.success {
+            display: block;
+            background: rgba(0, 220, 130, .1);
+            border: 1px solid rgba(0, 220, 130, .2);
+            color: #00e68a;
+        }
+
+        .divider {
+            display: flex;
+            align-items: center;
+            margin: 20px 0 15px;
+            color: #4a5568;
+            font-size: 11px;
+        }
+
+        .divider::before,
+        .divider::after {
+            content: '';
+            flex: 1;
+            height: 1px;
+            background: #1d3150;
+        }
+
+        .divider span {
+            padding: 0 10px;
+        }
+
+        .toast {
+            position: fixed;
+            bottom: 20px;
+            left: 50%;
+            transform: translateX(-50%) translateY(100px);
+            background: #00e68a;
+            color: #000;
+            padding: 10px 20px;
+            border-radius: 8px;
+            font-size: 12px;
+            font-weight: bold;
+            box-shadow: 0 5px 15px rgba(0, 230, 138, 0.3);
+            opacity: 0;
+            transition: 0.3s;
+            z-index: 1000;
+        }
+
+        .toast.show {
+            opacity: 1;
+            transform: translateX(-50%) translateY(0);
+        }
+    </style>
+</head>
+
+<body>
+
+<div class="container">
+
+    <div class="card">
+
+        <div class="header">
+            <div class="title">تنظیمات پنل</div>
+            <div class="subtitle">تغییر نام کاربری و رمز عبور ادمین</div>
+        </div>
+
+        <div class="current">
+            <div>مدیر فعلی: <strong>{{ current_username }}</strong></div>
+            <button class="copy-btn" onclick="copyUsername()">کپی نام کاربری</button>
+        </div>
+
+        <div id="message" class="message"></div>
+
+        <form id="settingsForm">
+
+            <div class="group">
+                <label>نام کاربری جدید</label>
+                <input
+                    id="username"
+                    type="text"
+                    minlength="3"
+                    autocomplete="username"
+                    placeholder="نام کاربری جدید را وارد کنید"
+                    value="{{ current_username }}"
+                    required
+                >
+            </div>
+
+            <div class="divider">
+                <span>تغییر رمز عبور</span>
+            </div>
+
+            <div class="group">
+                <label>رمز عبور فعلی</label>
+                <div class="input-wrapper">
+                    <input
+                        id="current_password"
+                        type="password"
+                        autocomplete="current-password"
+                        placeholder="رمز عبور فعلی را وارد کنید"
+                        required
+                    >
+                    <button type="button" class="toggle-password" onclick="togglePassword('current_password', this)">
+                        <svg viewBox="0 0 24 24">
+                            <path d="M12,9A3,3 0 0,0 9,12A3,3 0 0,0 12,15A3,3 0 0,0 15,12A3,3 0 0,0 12,9M12,17A5,5 0 0,1 7,12A5,5 0 0,1 12,7A5,5 0 0,1 17,12A5,5 0 0,1 12,17M12,4.5C7,4.5 2.73,7.61 1,12C2.73,16.39 7,19.5 12,19.5C17,19.5 21.27,16.39 23,12C21.27,7.61 17,4.5 12,4.5Z"/>
+                        </svg>
+                    </button>
+                </div>
+            </div>
+
+            <div class="group">
+                <label>رمز عبور جدید</label>
+                <div class="input-wrapper">
+                    <input
+                        id="password"
+                        type="password"
+                        minlength="4"
+                        autocomplete="new-password"
+                        placeholder="رمز عبور جدید را وارد کنید"
+                        required
+                    >
+                    <button type="button" class="toggle-password" onclick="togglePassword('password', this)">
+                        <svg viewBox="0 0 24 24">
+                            <path d="M12,9A3,3 0 0,0 9,12A3,3 0 0,0 12,15A3,3 0 0,0 15,12A3,3 0 0,0 12,9M12,17A5,5 0 0,1 7,12A5,5 0 0,1 12,7A5,5 0 0,1 17,12A5,5 0 0,1 12,17M12,4.5C7,4.5 2.73,7.61 1,12C2.73,16.39 7,19.5 12,19.5C17,19.5 21.27,16.39 23,12C21.27,7.61 17,4.5 12,4.5Z"/>
+                        </svg>
+                    </button>
+                </div>
+                <div class="password-strength" id="strengthBar">
+                    <div class="strength-bar" id="strengthFill"></div>
+                </div>
+                <div class="strength-text" id="strengthText"></div>
+            </div>
+
+            <div class="group">
+                <label>تکرار رمز عبور جدید</label>
+                <div class="input-wrapper">
+                    <input
+                        id="confirm_password"
+                        type="password"
+                        minlength="4"
+                        autocomplete="new-password"
+                        placeholder="تکرار رمز عبور جدید را وارد کنید"
+                        required
+                    >
+                    <button type="button" class="toggle-password" onclick="togglePassword('confirm_password', this)">
+                        <svg viewBox="0 0 24 24">
+                            <path d="M12,9A3,3 0 0,0 9,12A3,3 0 0,0 12,15A3,3 0 0,0 15,12A3,3 0 0,0 12,9M12,17A5,5 0 0,1 7,12A5,5 0 0,1 12,7A5,5 0 0,1 17,12A5,5 0 0,1 12,17M12,4.5C7,4.5 2.73,7.61 1,12C2.73,16.39 7,19.5 12,19.5C17,19.5 21.27,16.39 23,12C21.27,7.61 17,4.5 12,4.5Z"/>
+                        </svg>
+                    </button>
+                </div>
+            </div>
+
+            <button
+                id="saveButton"
+                class="button"
+                type="submit"
+            >
+                ذخیره تغییرات
+            </button>
+
+        </form>
+
+        <a class="back" href="/dashboard">بازگشت به داشبورد</a>
+
+    </div>
+
+</div>
+
+<div class="toast" id="toast">کپی شد!</div>
+
+<script>
+const form = document.getElementById("settingsForm");
+const message = document.getElementById("message");
+const button = document.getElementById("saveButton");
+const passwordInput = document.getElementById("password");
+const strengthBar = document.getElementById("strengthBar");
+const strengthFill = document.getElementById("strengthFill");
+const strengthText = document.getElementById("strengthText");
+const toast = document.getElementById("toast");
+
+function showMessage(text, type) {
+    message.textContent = text;
+    message.className = "message " + type;
+}
+
+function showToast(text) {
+    toast.textContent = text;
+    toast.classList.add("show");
+    setTimeout(() => {
+        toast.classList.remove("show");
+    }, 2000);
+}
+
+function copyUsername() {
+    const username = "{{ current_username }}";
+    navigator.clipboard.writeText(username).then(() => {
+        showToast("نام کاربری کپی شد ✓");
+    }).catch(() => {
+        const textArea = document.createElement("textarea");
+        textArea.value = username;
+        document.body.appendChild(textArea);
+        textArea.select();
+        document.execCommand('copy');
+        document.body.removeChild(textArea);
+        showToast("نام کاربری کپی شد ✓");
+    });
+}
+
+function togglePassword(inputId, btn) {
+    const input = document.getElementById(inputId);
+    const svg = btn.querySelector("svg");
+    
+    if (input.type === "password") {
+        input.type = "text";
+        svg.innerHTML = '<path d="M11.83,9L15,12.16C15,12.11 15,12.05 15,12A3,3 0 0,0 12,9C11.94,9 11.89,9 11.83,9M7.53,9.8L9.08,11.35C9.03,11.56 9,11.77 9,12A3,3 0 0,0 12,15C12.22,15 12.44,14.97 12.65,14.92L14.2,16.47C13.53,16.8 12.79,17 12,17A5,5 0 0,1 7,12C7,11.21 7.2,10.47 7.53,9.8M2,4.27L4.28,6.55L4.73,7C3.08,8.3 1.78,10 1,12C2.73,16.39 7,19.5 12,19.5C13.55,19.5 15.03,19.2 16.38,18.66L16.81,19.08L19.73,22L21,20.73L3.27,3M12,7A5,5 0 0,1 17,12C17,12.64 16.87,13.26 16.64,13.82L19.57,16.75C21.07,15.5 22.27,13.86 23,12C21.27,7.61 17,4.5 12,4.5C10.6,4.5 9.26,4.75 8,5.2L10.17,7.35C10.74,7.13 11.35,7 12,7Z"/>';
+    } else {
+        input.type = "password";
+        svg.innerHTML = '<path d="M12,9A3,3 0 0,0 9,12A3,3 0 0,0 12,15A3,3 0 0,0 15,12A3,3 0 0,0 12,9M12,17A5,5 0 0,1 7,12A5,5 0 0,1 12,7A5,5 0 0,1 17,12A5,5 0 0,1 12,17M12,4.5C7,4.5 2.73,7.61 1,12C2.73,16.39 7,19.5 12,19.5C17,19.5 21.27,16.39 23,12C21.27,7.61 17,4.5 12,4.5Z"/>';
+    }
+}
+
+passwordInput.addEventListener("input", function() {
+    const pwd = this.value;
+    
+    if (pwd.length === 0) {
+        strengthBar.style.display = "none";
+        strengthText.style.display = "none";
+        return;
+    }
+    
+    strengthBar.style.display = "block";
+    strengthText.style.display = "block";
+    
+    let strength = 0;
+    let text = "";
+    let color = "";
+    
+    if (pwd.length >= 4) strength += 20;
+    if (pwd.length >= 8) strength += 20;
+    if (/[A-Z]/.test(pwd)) strength += 20;
+    if (/[0-9]/.test(pwd)) strength += 20;
+    if (/[^A-Za-z0-9]/.test(pwd)) strength += 20;
+    
+    if (strength <= 20) {
+        text = "ضعیف";
+        color = "#ff4444";
+    } else if (strength <= 40) {
+        text = "متوسط";
+        color = "#ffa500";
+    } else if (strength <= 60) {
+        text = "خوب";
+        color = "#ffd700";
+    } else {
+        text = "قوی";
+        color = "#00e68a";
+    }
+    
+    strengthFill.style.width = strength + "%";
+    strengthFill.style.background = color;
+    strengthText.textContent = "قدرت رمز عبور: " + text;
+    strengthText.style.color = color;
+});
+
+form.addEventListener("submit", async function(event) {
+    event.preventDefault();
+
+    const username = document.getElementById("username").value.trim();
+    const currentPassword = document.getElementById("current_password").value;
+    const password = document.getElementById("password").value;
+    const confirmPassword = document.getElementById("confirm_password").value;
+
+    if (username.length < 3) {
+        showMessage("نام کاربری باید حداقل ۳ کاراکتر باشد", "error");
+        return;
+    }
+
+    if (password.length < 4) {
+        showMessage("رمز عبور جدید باید حداقل ۴ کاراکتر باشد", "error");
+        return;
+    }
+
+    if (password !== confirmPassword) {
+        showMessage("رمز عبور جدید با تکرار آن مطابقت ندارد", "error");
+        return;
+    }
+
+    button.disabled = true;
+    button.textContent = "در حال ذخیره...";
+
+    try {
+        const response = await fetch("/api/settings", {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json"
+            },
+            body: JSON.stringify({
+                username: username,
+                password: password,
+                current_password: currentPassword
+            })
+        });
+
+        const data = await response.json();
+
+        if (!response.ok || data.status !== "success") {
+            showMessage(data.message || "خطایی رخ داد", "error");
+            button.disabled = false;
+            button.textContent = "ذخیره تغییرات";
+            return;
+        }
+
+        showMessage("تغییرات با موفقیت ذخیره شد. در حال انتقال به صفحه ورود...", "success");
+
+        setTimeout(function() {
+            window.location.href = "/login";
+        }, 1500);
+
+    } catch (error) {
+        showMessage("خطا در ارتباط با سرور. لطفاً دوباره تلاش کنید", "error");
+        button.disabled = false;
+        button.textContent = "ذخیره تغییرات";
+    }
+});
+</script>
+
+</body>
+</html>
