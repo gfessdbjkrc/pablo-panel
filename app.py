@@ -13,7 +13,6 @@ import urllib.parse
 from datetime import datetime
 from flask import Flask, render_template, request, jsonify, Response, redirect, url_for, session
 
-# کتابخانه تلگرام (به صورت امن ایمپورت می‌شود)
 try:
     import telebot
 except ImportError:
@@ -21,10 +20,6 @@ except ImportError:
 
 app = Flask(__name__)
 app.secret_key = os.environ.get("SECRET_KEY", "pablo-rail-secret-key-change-me")
-
-# =========================================================
-# تنظیمات اصلی
-# =========================================================
 
 ADMIN_USERNAME = os.environ.get("ADMIN_USER", "admin")
 ADMIN_PASSWORD = os.environ.get("ADMIN_PASS", "admin")
@@ -40,21 +35,15 @@ NGINX_CONFIG_PATH = "nginx.conf"
 ONLINE_USERS = {}
 ONLINE_THRESHOLD = 90
 
-# =========================================================
-# دیتابیس و توابع تنظیمات اختصاصی ربات
-# =========================================================
-
 def get_db():
     conn = sqlite3.connect(DB_PATH, check_same_thread=False)
     conn.row_factory = sqlite3.Row
     return conn
 
-
 def init_db():
     conn = get_db()
     c = conn.cursor()
 
-    # جدول کاربران
     c.execute("""
         CREATE TABLE IF NOT EXISTS users (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -68,7 +57,6 @@ def init_db():
         )
     """)
 
-    # جدول تنظیمات عمومی (ذخیره امن توکن تلگرام)
     c.execute("""
         CREATE TABLE IF NOT EXISTS settings (
             key TEXT PRIMARY KEY,
@@ -78,7 +66,6 @@ def init_db():
 
     conn.commit()
     conn.close()
-
 
 def get_setting(key, default=""):
     try:
@@ -91,7 +78,6 @@ def get_setting(key, default=""):
     except Exception:
         return default
 
-
 def set_setting(key, value):
     try:
         conn = get_db()
@@ -103,11 +89,6 @@ def set_setting(key, value):
     except Exception as e:
         print("Error saving setting:", e)
         return False
-
-
-# =========================================================
-# مدیریت تنظیمات ورود پنل
-# =========================================================
 
 def get_admin_credentials():
     env_user = os.environ.get("ADMIN_USER")
@@ -133,7 +114,6 @@ def get_admin_credentials():
 
     return "admin", "admin"
 
-
 def save_admin_credentials(username, password):
     settings_file = "panel_settings.json"
 
@@ -145,23 +125,13 @@ def save_admin_credentials(username, password):
     with open(settings_file, "w", encoding="utf-8") as f:
         json.dump(data, f, ensure_ascii=False, indent=2)
 
-
-# =========================================================
-# کاربران
-# =========================================================
-
 def get_all_users():
     conn = get_db()
     c = conn.cursor()
-
     c.execute("SELECT * FROM users ORDER BY id DESC")
-
     rows = [dict(r) for r in c.fetchall()]
-
     conn.close()
-
     return rows
-
 
 def enrich_user(u):
     try:
@@ -188,26 +158,16 @@ def enrich_user(u):
 
     return u
 
-
 def is_user_online(name):
     last_seen = ONLINE_USERS.get(name, 0)
     return (time.time() - last_seen) < ONLINE_THRESHOLD
 
-
-# =========================================================
-# ساخت کانفیگ Xray
-# =========================================================
-
 def build_xray_config():
-
     users = get_all_users()
-
     clients = []
 
     for u in users:
-
         if u["enabled"] == 1:
-
             clients.append({
                 "id": u["uuid"],
                 "email": u["name"],
@@ -215,7 +175,6 @@ def build_xray_config():
             })
 
     if not clients:
-
         clients.append({
             "id": str(uuid.uuid4()),
             "email": "default_user",
@@ -226,14 +185,11 @@ def build_xray_config():
         "log": {
             "loglevel": "warning"
         },
-
         "stats": {},
-
         "api": {
             "tag": "api",
             "services": ["StatsService"]
         },
-
         "policy": {
             "levels": {
                 "0": {
@@ -246,7 +202,6 @@ def build_xray_config():
                 "statsInboundDownlink": True
             }
         },
-
         "inbounds": [
             {
                 "tag": "api",
@@ -262,30 +217,25 @@ def build_xray_config():
                 "port": XRAY_PORT,
                 "listen": "127.0.0.1",
                 "protocol": "vless",
-
                 "settings": {
                     "clients": clients,
                     "decryption": "none"
                 },
-
                 "streamSettings": {
                     "network": "ws",
                     "security": "none",
-
                     "wsSettings": {
                         "path": "/ws"
                     }
                 }
             }
         ],
-
         "outbounds": [
             {
                 "protocol": "freedom",
                 "tag": "direct"
             }
         ],
-
         "routing": {
             "rules": [
                 {
@@ -300,15 +250,8 @@ def build_xray_config():
     with open(XRAY_CONFIG_PATH, "w", encoding="utf-8") as f:
         json.dump(config, f, indent=2, ensure_ascii=False)
 
-
-# =========================================================
-# ری‌استارت Xray
-# =========================================================
-
 def restart_xray():
-
     build_xray_config()
-
     try:
         subprocess.run(["pkill", "-9", "-f", "xray"], check=False)
         time.sleep(0.5)
@@ -328,14 +271,8 @@ def restart_xray():
     except Exception as e:
         print("Xray start error:", e)
 
-
-# =========================================================
-# Xray Stats API
-# =========================================================
-
 def xray_query_stats():
     stats = {}
-
     xray_bin = "/usr/local/bin/xray/xray"
     if not os.path.exists(xray_bin):
         xray_bin = "xray"
@@ -379,7 +316,6 @@ def xray_query_stats():
 
     return stats
 
-
 def xray_reset_user_stats(user_email):
     xray_bin = "/usr/local/bin/xray/xray"
     if not os.path.exists(xray_bin):
@@ -402,13 +338,7 @@ def xray_reset_user_stats(user_email):
     except Exception:
         pass
 
-
-# =========================================================
-# تایمر پس‌زمینه (جمع‌آوری آمار + چک حجم)
-# =========================================================
-
 PREVIOUS_STATS = {}
-
 
 def stats_collector():
     global PREVIOUS_STATS
@@ -464,87 +394,50 @@ def stats_collector():
         except Exception as e:
             print("Stats collector error:", e)
 
-
 def start_stats_collector():
     t = threading.Thread(target=stats_collector, daemon=True)
     t.start()
 
-
-# =========================================================
-# NGINX
-# =========================================================
-
 def start_nginx():
-
     port = os.environ.get("PORT", "8080")
 
     nginx_conf = f"""
 pid /run/nginx.pid;
-
 error_log /dev/stderr warn;
-
 events {{
     worker_connections 1024;
 }}
-
 http {{
-
     access_log /dev/stdout;
-
     include /etc/nginx/mime.types;
-
     default_type application/octet-stream;
-
     sendfile on;
-
     keepalive_timeout 65;
-
     map $http_upgrade $connection_upgrade {{
         default upgrade;
         '' close;
     }}
-
     server {{
-
         listen {port};
-
         server_name _;
-
         location ~ ^/ws {{
-
             proxy_redirect off;
-
             rewrite ^/ws.*$ /ws break;
-
             proxy_pass http://127.0.0.1:{XRAY_PORT};
-
             proxy_http_version 1.1;
-
             proxy_set_header Upgrade $http_upgrade;
-
             proxy_set_header Connection $connection_upgrade;
-
             proxy_set_header Host $http_host;
-
             proxy_set_header X-Real-IP $remote_addr;
-
             proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
-
             proxy_read_timeout 86400s;
-
             proxy_send_timeout 86400s;
         }}
-
         location / {{
-
             proxy_pass http://127.0.0.1:{FLASK_PORT};
-
             proxy_set_header Host $http_host;
-
             proxy_set_header X-Real-IP $remote_addr;
-
             proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
-
             proxy_set_header X-Forwarded-Proto $scheme;
         }}
     }}
@@ -568,13 +461,7 @@ http {{
         "daemon off;"
     ])
 
-
-# =========================================================
-# ساخت کانفیگ‌های ۱۰ گانه
-# =========================================================
-
 def make_all_vless_configs(user, host):
-
     created_dt = datetime.fromisoformat(user["created_at"])
     elapsed_days = (datetime.now() - created_dt).days
     days_left = max(0, user["expire_days"] - elapsed_days)
@@ -597,7 +484,6 @@ def make_all_vless_configs(user, host):
 
     configs = []
 
-    # 1
     c1 = (
         f"vless://{u_uuid}@{host}:443"
         f"?path=%2Fws%2F{u_uuid}"
@@ -619,7 +505,6 @@ def make_all_vless_configs(user, host):
         "config": c1
     })
 
-    # 2
     c2 = (
         f"vless://{u_uuid}@{host}:443"
         f"?path=%2Fws%2F{u_uuid}%3Fed%3D2560"
@@ -641,7 +526,6 @@ def make_all_vless_configs(user, host):
         "config": c2
     })
 
-    # 3
     c3 = (
         f"vless://{u_uuid}@{host}:443"
         f"?path=%2Fws%2F{u_uuid}"
@@ -663,7 +547,6 @@ def make_all_vless_configs(user, host):
         "config": c3
     })
 
-    # 4
     c4 = (
         f"vless://{u_uuid}@{host}:443"
         f"?path=%2Fws%2F{u_uuid}"
@@ -685,7 +568,6 @@ def make_all_vless_configs(user, host):
         "config": c4
     })
 
-    # 5
     c5 = (
         f"vless://{u_uuid}@{host}:443"
         f"?path=%2Fws%2F{u_uuid}%3Fed%3D2048"
@@ -707,7 +589,6 @@ def make_all_vless_configs(user, host):
         "config": c5
     })
 
-    # 6
     c6 = (
         f"vless://{u_uuid}@{host}:443"
         f"?path=%2Fws%2F{u_uuid}"
@@ -728,7 +609,6 @@ def make_all_vless_configs(user, host):
         "config": c6
     })
 
-    # 7
     c7 = (
         f"vless://{u_uuid}@{host}:443"
         f"?path=%2Fws%2F{u_uuid}%3Fed%3D2560"
@@ -750,7 +630,6 @@ def make_all_vless_configs(user, host):
         "config": c7
     })
 
-    # 8
     c8 = (
         f"vless://{u_uuid}@{host}:80"
         f"?path=%2Fws%2F{u_uuid}"
@@ -767,7 +646,6 @@ def make_all_vless_configs(user, host):
         "config": c8
     })
 
-    # 9
     c9 = (
         f"vless://{u_uuid}@{host}:443"
         f"?path=%2Fws%2F{u_uuid}"
@@ -789,7 +667,6 @@ def make_all_vless_configs(user, host):
         "config": c9
     })
 
-    # 10
     c10 = (
         f"vless://{u_uuid}@{host}:443"
         f"?path=%2Fws%2F{u_uuid}%3Fhost%3D{host}"
@@ -813,17 +690,11 @@ def make_all_vless_configs(user, host):
 
     return configs
 
-
-# =========================================================
-# روت‌ها
-# =========================================================
-
 @app.route("/")
 def home():
     if "admin" not in session:
         return redirect(url_for("login"))
     return redirect(url_for("dashboard"))
-
 
 @app.route("/login", methods=["GET", "POST"])
 def login():
@@ -841,12 +712,10 @@ def login():
 
     return render_template("login.html", error=None)
 
-
 @app.route("/logout")
 def logout():
     session.pop("admin", None)
     return redirect(url_for("login"))
-
 
 @app.route("/dashboard")
 def dashboard():
@@ -867,7 +736,6 @@ def dashboard():
         total_gb=round(total_gb, 2),
         total_used=round(total_used, 2)
     )
-
 
 @app.route("/users")
 def users_page():
@@ -896,7 +764,6 @@ def users_page():
         total_used=round(total_used, 2)
     )
 
-
 @app.route("/api/online_users")
 def api_online_users():
     if "admin" not in session:
@@ -924,7 +791,6 @@ def api_online_users():
         "users": online
     })
 
-
 @app.route("/settings")
 def settings():
     if "admin" not in session:
@@ -941,47 +807,55 @@ def settings():
         telegram_admin_id=tg_admin_id
     )
 
-
 @app.route("/api/settings", methods=["POST"])
 def update_settings():
     if "admin" not in session:
         return jsonify({"status": "error", "message": "دسترسی غیرمجاز"}), 401
 
     data = request.get_json(silent=True) or {}
+    action = data.get("action", "")
 
-    new_username = data.get("username", "").strip()
-    new_password = data.get("password", "")
-    current_password = data.get("current_password", "")
-    tg_token = data.get("telegram_token", "").strip()
-    tg_admin_id = data.get("telegram_admin_id", "").strip()
+    if action == "telegram":
+        tg_token = data.get("telegram_token", "").strip()
+        tg_admin_id = data.get("telegram_admin_id", "").strip()
 
-    if not new_username:
-        return jsonify({"status": "error", "message": "نام کاربری جدید الزامی است"}), 400
+        try:
+            set_setting("telegram_token", tg_token)
+            set_setting("telegram_admin_id", tg_admin_id)
+            return jsonify({"status": "success", "message": "تنظیمات ربات تلگرام با موفقیت ثبت شد"})
+        except Exception as e:
+            return jsonify({"status": "error", "message": str(e)}), 500
 
-    if not new_password:
-        return jsonify({"status": "error", "message": "رمز عبور جدید الزامی است"}), 400
+    elif action == "security":
+        new_username = data.get("username", "").strip()
+        new_password = data.get("password", "")
+        current_password = data.get("current_password", "")
 
-    username, password = get_admin_credentials()
+        if not new_username:
+            return jsonify({"status": "error", "message": "نام کاربری جدید الزامی است"}), 400
 
-    if current_password != password:
-        return jsonify({"status": "error", "message": "رمز عبور فعلی اشتباه است"}), 400
+        if not new_password:
+            return jsonify({"status": "error", "message": "رمز عبور جدید الزامی است"}), 400
 
-    if len(new_username) < 3:
-        return jsonify({"status": "error", "message": "نام کاربری حداقل باید ۳ کاراکتر باشد"}), 400
+        username, password = get_admin_credentials()
 
-    if len(new_password) < 4:
-        return jsonify({"status": "error", "message": "رمز عبور حداقل باید ۴ کاراکتر باشد"}), 400
+        if current_password != password:
+            return jsonify({"status": "error", "message": "رمز عبور فعلی اشتباه است"}), 400
 
-    try:
-        save_admin_credentials(new_username, new_password)
-        set_setting("telegram_token", tg_token)
-        set_setting("telegram_admin_id", tg_admin_id)
-        
-        session.pop("admin", None)
-        return jsonify({"status": "success", "message": "اطلاعات ورود با موفقیت تغییر کرد"})
-    except Exception as e:
-        return jsonify({"status": "error", "message": str(e)}), 500
+        if len(new_username) < 3:
+            return jsonify({"status": "error", "message": "نام کاربری حداقل باید ۳ کاراکتر باشد"}), 400
 
+        if len(new_password) < 4:
+            return jsonify({"status": "error", "message": "رمز عبور حداقل باید ۴ کاراکتر باشد"}), 400
+
+        try:
+            save_admin_credentials(new_username, new_password)
+            session.pop("admin", None)
+            return jsonify({"status": "success", "message": "اطلاعات ورود تغییر کرد"})
+        except Exception as e:
+            return jsonify({"status": "error", "message": str(e)}), 500
+
+    return jsonify({"status": "error", "message": "درخواست نامعتبر"}), 400
 
 @app.route("/api/add_user", methods=["POST"])
 def add_user():
@@ -1034,7 +908,6 @@ def add_user():
     except Exception as e:
         return jsonify({"status": "error", "message": str(e)}), 500
 
-
 @app.route("/api/edit_user/<int:user_id>", methods=["POST"])
 def edit_user(user_id):
     if "admin" not in session:
@@ -1068,7 +941,6 @@ def edit_user(user_id):
     except Exception as e:
         return jsonify({"status": "error", "message": str(e)}), 500
 
-
 @app.route("/api/reset_user/<int:user_id>", methods=["POST"])
 def reset_user(user_id):
     if "admin" not in session:
@@ -1097,7 +969,6 @@ def reset_user(user_id):
     except Exception as e:
         return jsonify({"status": "error", "message": str(e)}), 500
 
-
 @app.route("/api/delete_user/<int:user_id>", methods=["POST"])
 def delete_user(user_id):
     if "admin" not in session:
@@ -1114,7 +985,6 @@ def delete_user(user_id):
     restart_xray()
 
     return jsonify({"status": "success", "message": "کاربر با موفقیت حذف شد"})
-
 
 @app.route("/api/toggle_user/<int:user_id>", methods=["POST"])
 def toggle_user(user_id):
@@ -1142,7 +1012,6 @@ def toggle_user(user_id):
     restart_xray()
 
     return jsonify({"status": "success", "new_state": new_val})
-
 
 @app.route("/api/user_config/<int:user_id>")
 def user_config(user_id):
@@ -1172,7 +1041,6 @@ def user_config(user_id):
         "sub": sub_link,
         "user": dict(user)
     })
-
 
 @app.route("/sub/<user_uuid>")
 def subscription(user_uuid):
@@ -1235,11 +1103,6 @@ def subscription(user_uuid):
         sub_url=request.url
     )
 
-
-# =========================================================
-# بخش موتور و منطق ربات تلگرام (کاملا مستقل و ایزوله)
-# =========================================================
-
 def run_telegram_bot_thread():
     if not telebot:
         print("[Telegram Bot] telebot module not found. Skipping bot launch.")
@@ -1282,7 +1145,6 @@ def run_telegram_bot_thread():
                 text = message.text.strip()
                 chat_id = str(message.chat.id)
 
-                # بخش ادمین
                 if chat_id == tg_admin_id:
                     if text == '📊 وضعیت پنل':
                         users = get_all_users()
@@ -1318,7 +1180,6 @@ def run_telegram_bot_thread():
 
                         bot.send_message(chat_id, msg, parse_mode="Markdown")
 
-                # بخش مشتری
                 else:
                     conn = get_db()
                     c = conn.cursor()
@@ -1359,20 +1220,14 @@ def run_telegram_bot_thread():
             print("[Telegram Bot] Polling crash/error, restarting in 10s:", e)
             time.sleep(10)
 
-
 def start_telegram_bot():
     t = threading.Thread(target=run_telegram_bot_thread, daemon=True)
     t.start()
-
-
-# =========================================================
-# شروع برنامه
-# =========================================================
 
 if __name__ == "__main__":
     init_db()
     restart_xray()
     start_nginx()
     start_stats_collector()
-    start_telegram_bot()  # استارت کاملا مستقل ربات بدون مسدود کردن پورت ریلوی
+    start_telegram_bot()
     app.run(host="127.0.0.1", port=FLASK_PORT)
