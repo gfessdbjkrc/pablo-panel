@@ -155,7 +155,7 @@ def is_user_online(name):
 
 
 # =========================================================
-# ساخت کانفیگ Xray (با Stats API)
+# ساخت کانفیگ Xray
 # =========================================================
 
 def build_xray_config():
@@ -243,10 +243,6 @@ def build_xray_config():
             {
                 "protocol": "freedom",
                 "tag": "direct"
-            },
-            {
-                "protocol": "built-in",
-                "tag": "api"
             }
         ],
 
@@ -275,13 +271,17 @@ def restart_xray():
 
     try:
         subprocess.run(["pkill", "-9", "-f", "xray"], check=False)
-        time.sleep(0.3)
+        time.sleep(0.5)
     except Exception:
         pass
 
     try:
+        xray_bin = "/usr/local/bin/xray/xray"
+        if not os.path.exists(xray_bin):
+            xray_bin = "xray"
+
         subprocess.Popen(
-            ["/usr/local/bin/xray/xray", "run", "-c", XRAY_CONFIG_PATH],
+            [xray_bin, "run", "-c", XRAY_CONFIG_PATH],
             stdout=sys.stdout,
             stderr=sys.stderr
         )
@@ -296,16 +296,19 @@ def restart_xray():
 def xray_query_stats():
     stats = {}
 
+    xray_bin = "/usr/local/bin/xray/xray"
+    if not os.path.exists(xray_bin):
+        xray_bin = "xray"
+
     try:
-        # تغییر الگو به user>>> و فرستادن پارامتر -reset برای دریافت و ریست همزمان ترافیک جهت افزایش سرعت سرور
         result = subprocess.run(
             [
-                "/usr/local/bin/xray/xray",
+                xray_bin,
                 "api",
                 "statsquery",
-                "--server=127.0.0.1:" + str(XRAY_API_PORT),
-                "-pattern", "user>>>",
-                "-reset"
+                f"--server=127.0.0.1:{XRAY_API_PORT}",
+                "-pattern=user>>>",
+                "-reset=true"
             ],
             capture_output=True,
             text=True,
@@ -313,7 +316,6 @@ def xray_query_stats():
         )
 
         if result.returncode != 0:
-            print("Stats query error output:", result.stderr)
             return stats
 
         data = json.loads(result.stdout)
@@ -332,25 +334,27 @@ def xray_query_stats():
 
                 stats[user_email] += value
 
-    except subprocess.TimeoutExpired:
-        print("Stats query timeout expired")
-    except Exception as e:
-        print("Stats query error:", e)
+    except Exception:
+        pass
 
     return stats
 
 
 def xray_reset_user_stats(user_email):
+    xray_bin = "/usr/local/bin/xray/xray"
+    if not os.path.exists(xray_bin):
+        xray_bin = "xray"
+
     try:
         for direction in ["uplink", "downlink"]:
             subprocess.run(
                 [
-                    "/usr/local/bin/xray/xray",
+                    xray_bin,
                     "api",
                     "statsquery",
-                    "--server=127.0.0.1:" + str(XRAY_API_PORT),
-                    "-reset",
-                    "-pattern", f"user>>>{user_email}>>>traffic>>>{direction}"
+                    f"--server=127.0.0.1:{XRAY_API_PORT}",
+                    "-reset=true",
+                    f"-pattern=user>>>{user_email}>>>traffic>>>{direction}"
                 ],
                 capture_output=True,
                 timeout=3
@@ -371,7 +375,7 @@ def stats_collector():
 
     while True:
         try:
-            time.sleep(30)
+            time.sleep(15)
 
             stats = xray_query_stats()
 
@@ -392,11 +396,7 @@ def stats_collector():
                     (total_bytes, user_email)
                 )
 
-                prev = PREVIOUS_STATS.get(user_email, 0)
-                if total_bytes > 0 or total_bytes != prev:
-                    ONLINE_USERS[user_email] = time.time()
-
-                PREVIOUS_STATS[user_email] = total_bytes
+                ONLINE_USERS[user_email] = time.time()
 
                 c.execute(
                     "SELECT id, quota_gb, used_bytes, enabled FROM users WHERE name = ?",
@@ -546,7 +546,6 @@ def make_all_vless_configs(user, host):
     u_uuid = user["uuid"]
     name = user["name"]
 
-    # فقط نام کانفیگ‌ها تغییر کرده است
     def config_remark(number):
         remark_text = (
             f"کانفیـگ پرسرعـت | "
@@ -722,7 +721,7 @@ def make_all_vless_configs(user, host):
         f"#{config_remark(8)}"
     )
     configs.append({
-        "title": "کانفیـگ پرسرعـت | 𝗣𝗔𝗕𝗟𝗢 𝗣𝗔𝗡𝗘 LU | 8",
+        "title": "کانفیـگ پرسرعـت | 𝗣𝗔𝗕𝗟𝗢 𝗣𝗔𝗡𝗘𝗟 | 8",
         "desc": "پورت اضطراری ۸۰ بدون رمزنگاری TLS (برای زمان اختلالات شدید گیت‌وی)",
         "tag": "HighSpeed 8",
         "config": c8
