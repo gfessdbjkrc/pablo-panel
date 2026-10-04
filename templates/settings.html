@@ -152,6 +152,9 @@
             box-shadow: 0 15px 35px rgba(0, 0, 0, 0.4);
             position: relative;
             overflow: hidden;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
             transition: border-color 0.3s;
         }
 
@@ -227,10 +230,6 @@
         /* FORM ELEMENTS */
         .form-group {
             margin-bottom: 18px;
-        }
-
-        .form-group:last-child {
-            margin-bottom: 0;
         }
 
         label {
@@ -346,47 +345,48 @@
             transition: 0.3s;
         }
 
-        /* ACTION FOOTER */
-        .action-card {
-            background: var(--card-bg);
-            border: 1px solid var(--card-border);
-            border-radius: 24px;
-            padding: 20px 24px;
-            backdrop-filter: blur(25px);
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            gap: 16px;
-            box-shadow: 0 15px 35px rgba(0, 0, 0, 0.4);
-        }
-
-        .action-info {
-            font-size: 12px;
-            color: var(--text-muted);
+        /* CARD ACTION BUTTON */
+        .card-btn-wrap {
+            margin-top: 24px;
+            border-top: 1px solid rgba(255, 255, 255, 0.05);
+            padding-top: 18px;
         }
 
         .btn-save {
-            min-width: 200px;
-            height: 50px;
+            width: 100%;
+            height: 48px;
             border: none;
             border-radius: 14px;
-            background: linear-gradient(100deg, #00d2ff, #2865ff, #8338ec);
             color: #fff;
-            font-size: 13px;
+            font-size: 12px;
             font-weight: 900;
-            letter-spacing: 1px;
+            letter-spacing: 0.5px;
             cursor: pointer;
             display: flex;
             align-items: center;
             justify-content: center;
             gap: 8px;
-            box-shadow: 0 0 25px rgba(0, 210, 255, 0.25);
             transition: 0.25s;
         }
 
-        .btn-save:hover:not(:disabled) {
+        .btn-blue {
+            background: linear-gradient(100deg, #00d2ff, #1c5bf0);
+            box-shadow: 0 4px 15px rgba(0, 210, 255, 0.15);
+        }
+
+        .btn-blue:hover:not(:disabled) {
             transform: translateY(-2px);
-            box-shadow: 0 0 35px rgba(0, 210, 255, 0.4);
+            box-shadow: 0 0 25px rgba(0, 210, 255, 0.35);
+        }
+
+        .btn-purple {
+            background: linear-gradient(100deg, #9d4edd, #6a0dad);
+            box-shadow: 0 4px 15px rgba(157, 78, 221, 0.15);
+        }
+
+        .btn-purple:hover:not(:disabled) {
+            transform: translateY(-2px);
+            box-shadow: 0 0 25px rgba(157, 78, 221, 0.35);
         }
 
         .btn-save:disabled {
@@ -395,8 +395,8 @@
         }
 
         .btn-save svg {
-            width: 18px;
-            height: 18px;
+            width: 16px;
+            height: 16px;
             fill: currentColor;
         }
 
@@ -407,7 +407,7 @@
             border-radius: 16px;
             font-size: 12px;
             font-weight: 700;
-            margin-bottom: 20px;
+            margin-bottom: 24px;
             text-align: center;
             animation: fadeIn 0.3s ease;
         }
@@ -432,8 +432,8 @@
         }
 
         .spinner {
-            width: 18px;
-            height: 18px;
+            width: 16px;
+            height: 16px;
             border: 2px solid rgba(255, 255, 255, 0.3);
             border-top-color: #fff;
             border-radius: 50%;
@@ -454,14 +454,8 @@
                 padding: 14px 16px;
             }
 
-            .action-card {
-                flex-direction: column;
-                align-items: stretch;
-                text-align: center;
-            }
-
-            .btn-save {
-                width: 100%;
+            .grid {
+                grid-template-columns: 1fr;
             }
         }
     </style>
@@ -489,12 +483,11 @@
 
     <div id="messageBox" class="message-box"></div>
 
-    <form id="settingsForm">
+    <div class="grid">
 
-        <div class="grid">
-
-            <!-- CARD 1: ADMIN ACCOUNT & SECURITY -->
-            <div class="glass-card">
+        <!-- CARD 1: ADMIN ACCOUNT & SECURITY FORM -->
+        <form id="securityForm" class="glass-card">
+            <div>
                 <div class="card-header">
                     <div class="card-title">
                         <div class="card-title-icon">
@@ -504,7 +497,7 @@
                         </div>
                         <div>
                             <h2>امنیت و ورود ادمین</h2>
-                            <p>تغییر نام کاربری و رمز عبور اصلی پنل</p>
+                            <p>تغییر نام کاربری و رمز اصلی پنل</p>
                         </div>
                     </div>
                     <span class="badge-status">ROOT</span>
@@ -526,7 +519,7 @@
                 <div class="form-group">
                     <label>رمز عبور فعلی</label>
                     <div class="input-box">
-                        <input type="password" id="current_password" placeholder="جهت تایید هویت، رمز فعلی را وارد کنید" required autocomplete="current-password">
+                        <input type="password" id="current_password" placeholder="جهت تایید، رمز فعلی را وارد کنید" required autocomplete="current-password">
                         <button type="button" class="input-action" onclick="togglePass('current_password', this)">
                             <svg viewBox="0 0 24 24"><path d="M12,9A3,3 0 0,0 9,12A3,3 0 0,0 12,15A3,3 0 0,0 15,12A3,3 0 0,0 12,9M12,17A5,5 0 0,1 7,12A5,5 0 0,1 12,7A5,5 0 0,1 17,12A5,5 0 0,1 12,17M12,4.5C7,4.5 2.73,7.61 1,12C2.73,16.39 7,19.5 12,19.5C17,19.5 21.27,16.39 23,12C21.27,7.61 17,4.5 12,4.5Z"/></svg>
                         </button>
@@ -546,7 +539,7 @@
                     </div>
                 </div>
 
-                <div class="form-group">
+                <div class="form-group" style="margin-bottom: 0;">
                     <label>تکرار رمز عبور جدید</label>
                     <div class="input-box">
                         <input type="password" id="confirm_password" placeholder="تکرار رمز عبور جدید" required autocomplete="new-password">
@@ -557,8 +550,19 @@
                 </div>
             </div>
 
-            <!-- CARD 2: TELEGRAM BOT INTEGRATION -->
-            <div class="glass-card">
+            <div class="card-btn-wrap">
+                <button type="submit" id="saveSecurityBtn" class="btn-save btn-blue">
+                    <svg viewBox="0 0 24 24">
+                        <path d="M12,17A2,2 0 0,0 14,15A2,2 0 0,0 12,13A2,2 0 0,0 10,15A2,2 0 0,0 12,17M18,8A2,2 0 0,1 20,10V20A2,2 0 0,1 18,22H6A2,2 0 0,1 4,20V10A2,2 0 0,1 6,8H9V6A3,3 0 0,1 12,3A3,3 0 0,1 15,6V8H18M12,5A1,1 0 0,0 11,6V8H13V6A1,1 0 0,0 12,5Z"/>
+                    </svg>
+                    ذخیره امنیت و تغییر رمز
+                </button>
+            </div>
+        </form>
+
+        <!-- CARD 2: TELEGRAM BOT FORM -->
+        <form id="telegramForm" class="glass-card">
+            <div>
                 <div class="card-header">
                     <div class="card-title">
                         <div class="card-title-icon" style="color: #00c8ff; background: rgba(0, 200, 255, 0.08);">
@@ -568,7 +572,7 @@
                         </div>
                         <div>
                             <h2>دستیار تلگرام</h2>
-                            <p>اتصال ربات تلگرام برای مانیتورینگ و مشتریان</p>
+                            <p>اتصال ربات تلگرام برای کاربران و ادمین</p>
                         </div>
                     </div>
                     <span class="badge-status">BOT SERVICE</span>
@@ -582,44 +586,41 @@
                     <p class="helper-text">توکن را از ربات رسمی <a href="https://t.me/BotFather" target="_blank">@BotFather</a> در تلگرام بسازید و اینجا قرار دهید.</p>
                 </div>
 
-                <div class="form-group" style="margin-top: 24px;">
+                <div class="form-group">
                     <label>شناسه عددی اکانت ادمین (Admin Chat ID)</label>
                     <div class="input-box">
                         <input type="text" id="tg_admin_id" value="{{ telegram_admin_id }}" placeholder="مثلاً: 584920184">
                     </div>
-                    <p class="helper-text">شناسه عددی تلگرام خود را می‌توانید از ربات <a href="https://t.me/userinfobot" target="_blank">@userinfobot</a> دریافت کنید تا دسترسی منوی مدیریت به شما داده شود.</p>
+                    <p class="helper-text">شناسه عددی تلگرام خود را می‌توانید از ربات <a href="https://t.me/userinfobot" target="_blank">@userinfobot</a> دریافت کنید.</p>
                 </div>
 
-                <div style="margin-top: 20px; padding: 12px; background: rgba(0, 234, 255, 0.03); border-radius: 12px; border: 1px dashed rgba(0, 234, 255, 0.15);">
+                <div style="margin-top: 15px; padding: 12px; background: rgba(0, 234, 255, 0.03); border-radius: 12px; border: 1px dashed rgba(0, 234, 255, 0.15);">
                     <p style="font-size: 11px; color: var(--text-muted); line-height: 1.6;">
                         💡 <strong>قابلیت ربات:</strong> کاربران با فرستادن نام یا UUID خود می‌توانند باقی‌مانده حجم و زمان خود را ببینند. شما با چت‌آیدی ادمین، دکمه‌های آمار سرور و فهرست کاربران را خواهید داشت.
                     </p>
                 </div>
             </div>
 
-        </div>
-
-        <!-- BOTTOM ACTION BAR -->
-        <div class="action-card">
-            <div class="action-info">
-                ⚠️ پس از تغییر مشخصات ورود، جلسه فعلی شما پایان یافته و به صفحه لاگین منتقل خواهید شد.
+            <div class="card-btn-wrap">
+                <button type="submit" id="saveTelegramBtn" class="btn-save btn-purple">
+                    <svg viewBox="0 0 24 24">
+                        <path d="M12,2A10,10 0 0,0 2,12A10,10 0 0,0 12,22A10,10 0 0,0 22,12A10,10 0 0,0 12,2M17,12L12,17V13H8V11H12V7L17,12Z"/>
+                    </svg>
+                    ذخیره تنظیمات ربات تلگرام
+                </button>
             </div>
-            <button type="submit" id="saveButton" class="btn-save">
-                <svg viewBox="0 0 24 24">
-                    <path d="M15,9H5V5H15M12,19A3,3 0 0,1 9,16A3,3 0 0,1 12,13A3,3 0 0,1 15,16A3,3 0 0,1 12,19M17,3H5C3.89,3 3,3.9 3,5V19A2,2 0 0,0 5,21H19A2,2 0 0,0 21,19V7L17,3Z"/>
-                </svg>
-                ذخیره تغییرات
-            </button>
-        </div>
+        </form>
 
-    </form>
+    </div>
 
 </div>
 
 <script>
-const form = document.getElementById("settingsForm");
 const messageBox = document.getElementById("messageBox");
-const saveBtn = document.getElementById("saveButton");
+const securityForm = document.getElementById("securityForm");
+const telegramForm = document.getElementById("telegramForm");
+const saveSecurityBtn = document.getElementById("saveSecurityBtn");
+const saveTelegramBtn = document.getElementById("saveTelegramBtn");
 const pwdInput = document.getElementById("password");
 const strengthMeter = document.getElementById("strengthMeter");
 const strengthBar = document.getElementById("strengthBar");
@@ -664,15 +665,14 @@ pwdInput.addEventListener("input", function() {
     strengthBar.style.backgroundColor = color;
 });
 
-form.addEventListener("submit", async function(e) {
+// FORM 1 SUBMIT: Security & Admin Login
+securityForm.addEventListener("submit", async function(e) {
     e.preventDefault();
 
     const username = document.getElementById("username").value.trim();
     const currentPassword = document.getElementById("current_password").value;
     const password = document.getElementById("password").value;
     const confirmPassword = document.getElementById("confirm_password").value;
-    const tgToken = document.getElementById("tg_token").value.trim();
-    const tgAdminId = document.getElementById("tg_admin_id").value.trim();
 
     if (username.length < 3) {
         showMessage("نام کاربری باید حداقل ۳ کاراکتر باشد", "error");
@@ -689,17 +689,59 @@ form.addEventListener("submit", async function(e) {
         return;
     }
 
-    saveBtn.disabled = true;
-    saveBtn.innerHTML = '<div class="spinner"></div> در حال ذخیره...';
+    saveSecurityBtn.disabled = true;
+    saveSecurityBtn.innerHTML = '<div class="spinner"></div> در حال ذخیره...';
 
     try {
         const res = await fetch("/api/settings", {
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({
+                action: "security",
                 username: username,
                 password: password,
-                current_password: currentPassword,
+                current_password: currentPassword
+            })
+        });
+
+        const data = await res.json();
+
+        if (!res.ok || data.status !== "success") {
+            showMessage(data.message || "خطایی در ذخیره تنظیمات امنیتی رخ داد", "error");
+            saveSecurityBtn.disabled = false;
+            saveSecurityBtn.innerHTML = '<svg viewBox="0 0 24 24"><path d="M12,17A2,2 0 0,0 14,15A2,2 0 0,0 12,13A2,2 0 0,0 10,15A2,2 0 0,0 12,17M18,8A2,2 0 0,1 20,10V20A2,2 0 0,1 18,22H6A2,2 0 0,1 4,20V10A2,2 0 0,1 6,8H9V6A3,3 0 0,1 12,3A3,3 0 0,1 15,6V8H18M12,5A1,1 0 0,0 11,6V8H13V6A1,1 0 0,0 12,5Z"/></svg> ذخیره امنیت و تغییر رمز';
+            return;
+        }
+
+        showMessage("✓ اطلاعات ورود با موفقیت تغییر کرد. در حال انتقال به صفحه ورود...", "success");
+
+        setTimeout(() => {
+            window.location.href = "/login";
+        }, 1500);
+
+    } catch (err) {
+        showMessage("خطا در برقراری ارتباط با سرور", "error");
+        saveSecurityBtn.disabled = false;
+        saveSecurityBtn.innerHTML = '<svg viewBox="0 0 24 24"><path d="M12,17A2,2 0 0,0 14,15A2,2 0 0,0 12,13A2,2 0 0,0 10,15A2,2 0 0,0 12,17M18,8A2,2 0 0,1 20,10V20A2,2 0 0,1 18,22H6A2,2 0 0,1 4,20V10A2,2 0 0,1 6,8H9V6A3,3 0 0,1 12,3A3,3 0 0,1 15,6V8H18M12,5A1,1 0 0,0 11,6V8H13V6A1,1 0 0,0 12,5Z"/></svg> ذخیره امنیت و تغییر رمز';
+    }
+});
+
+// FORM 2 SUBMIT: Telegram Bot
+telegramForm.addEventListener("submit", async function(e) {
+    e.preventDefault();
+
+    const tgToken = document.getElementById("tg_token").value.trim();
+    const tgAdminId = document.getElementById("tg_admin_id").value.trim();
+
+    saveTelegramBtn.disabled = true;
+    saveTelegramBtn.innerHTML = '<div class="spinner"></div> در حال ثبت...';
+
+    try {
+        const res = await fetch("/api/settings", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+                action: "telegram",
                 telegram_token: tgToken,
                 telegram_admin_id: tgAdminId
             })
@@ -708,22 +750,20 @@ form.addEventListener("submit", async function(e) {
         const data = await res.json();
 
         if (!res.ok || data.status !== "success") {
-            showMessage(data.message || "خطایی در ذخیره تنظیمات رخ داد", "error");
-            saveBtn.disabled = false;
-            saveBtn.innerHTML = '<svg viewBox="0 0 24 24"><path d="M15,9H5V5H15M12,19A3,3 0 0,1 9,16A3,3 0 0,1 12,13A3,3 0 0,1 15,16A3,3 0 0,1 12,19M17,3H5C3.89,3 3,3.9 3,5V19A2,2 0 0,0 5,21H19A2,2 0 0,0 21,19V7L17,3Z"/></svg> ذخیره تغییرات';
+            showMessage(data.message || "خطایی در ذخیره تنظیمات ربات تلگرام رخ داد", "error");
+            saveTelegramBtn.disabled = false;
+            saveTelegramBtn.innerHTML = '<svg viewBox="0 0 24 24"><path d="M12,2A10,10 0 0,0 2,12A10,10 0 0,0 12,22A10,10 0 0,0 22,12A10,10 0 0,0 12,2M17,12L12,17V13H8V11H12V7L17,12Z"/></svg> ذخیره تنظیمات ربات تلگرام';
             return;
         }
 
-        showMessage("✓ تغییرات با موفقیت ذخیره شد. در حال انتقال به صفحه لاگین...", "success");
-
-        setTimeout(() => {
-            window.location.href = "/login";
-        }, 1500);
+        showMessage("✓ تنظیمات ربات تلگرام با موفقیت به‌روزرسانی شد.", "success");
+        saveTelegramBtn.disabled = false;
+        saveTelegramBtn.innerHTML = '<svg viewBox="0 0 24 24"><path d="M12,2A10,10 0 0,0 2,12A10,10 0 0,0 12,22A10,10 0 0,0 22,12A10,10 0 0,0 12,2M17,12L12,17V13H8V11H12V7L17,12Z"/></svg> ذخیره تنظیمات ربات تلگرام';
 
     } catch (err) {
         showMessage("خطا در برقراری ارتباط با سرور", "error");
-        saveBtn.disabled = false;
-        saveBtn.innerHTML = '<svg viewBox="0 0 24 24"><path d="M15,9H5V5H15M12,19A3,3 0 0,1 9,16A3,3 0 0,1 12,13A3,3 0 0,1 15,16A3,3 0 0,1 12,19M17,3H5C3.89,3 3,3.9 3,5V19A2,2 0 0,0 5,21H19A2,2 0 0,0 21,19V7L17,3Z"/></svg> ذخیره تغییرات';
+        saveTelegramBtn.disabled = false;
+        saveTelegramBtn.innerHTML = '<svg viewBox="0 0 24 24"><path d="M12,2A10,10 0 0,0 2,12A10,10 0 0,0 12,22A10,10 0 0,0 22,12A10,10 0 0,0 12,2M17,12L12,17V13H8V11H12V7L17,12Z"/></svg> ذخیره تنظیمات ربات تلگرام';
     }
 });
 </script>
