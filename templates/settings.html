@@ -1,323 +1,779 @@
 <!DOCTYPE html>
 <html lang="fa" dir="rtl">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>تنظیمات پنل | PABLO PANEL</title>
-    <style>
-        * {
-            box-sizing: border-box;
-            margin: 0;
-            padding: 0;
-            font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, Tahoma, sans-serif;
-        }
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 
-        body {
-            min-height: 100vh;
-            background:
-                radial-gradient(circle at top right, rgba(0, 140, 255, .15), transparent 35%),
-                radial-gradient(circle at bottom left, rgba(0, 80, 255, .1), transparent 35%),
-                #050914;
-            color: #fff;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            padding: 20px;
-        }
+<title>PabloPanel | تنظیمات</title>
 
-        .container {
-            width: 100%;
-            max-width: 480px;
-        }
+<link href="https://cdn.jsdelivr.net/gh/rastikerdar/vazirmatn@v33.003/Vazirmatn-font-face.css" rel="stylesheet">
 
-        .card {
-            background: rgba(8, 15, 30, .95);
-            border: 1px solid rgba(0, 153, 255, .3);
-            border-radius: 20px;
-            padding: 30px 25px;
-            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.5);
-            backdrop-filter: blur(10px);
-        }
+<style>
+*{
+    box-sizing:border-box;
+    margin:0;
+    padding:0;
+    -webkit-tap-highlight-color:transparent;
+    font-family:Vazirmatn,Arial,sans-serif;
+}
 
-        .header {
-            text-align: center;
-            margin-bottom: 25px;
-        }
+:root{
+    --bg:#02030b;
+    --card:rgba(5,8,20,.90);
+    --blue:#00eaff;
+    --cyan:#00c8ff;
+    --purple:#7c3cff;
+    --pink:#c43cff;
+    --text:#f5f8ff;
+    --muted:#71809b;
+}
 
-        .title {
-            font-size: 24px;
-            font-weight: 800;
-            margin-bottom: 6px;
-            color: #fff;
-        }
+html,body{
+    width:100%;
+    min-height:100%;
+}
 
-        .subtitle {
-            color: #71819a;
-            font-size: 13px;
-        }
+body{
+    min-height:100vh;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    padding:18px;
 
-        .current {
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            margin-bottom: 20px;
-            padding: 12px 15px;
-            background: rgba(0, 140, 255, .08);
-            border: 1px solid rgba(0, 140, 255, .2);
-            border-radius: 12px;
-            font-size: 13px;
-        }
+    background:
+        radial-gradient(circle at 15% 15%, rgba(0,234,255,.15), transparent 28%),
+        radial-gradient(circle at 85% 85%, rgba(124,60,255,.18), transparent 30%),
+        radial-gradient(circle at 50% 50%, rgba(40,80,255,.06), transparent 45%),
+        #02030b;
 
-        .current strong {
-            color: #00aaff;
-            margin-right: 5px;
-        }
+    color:var(--text);
+}
 
-        .copy-btn {
-            background: rgba(0, 170, 255, 0.15);
-            border: 1px solid rgba(0, 170, 255, 0.3);
-            color: #00aaff;
-            padding: 4px 10px;
-            border-radius: 6px;
-            cursor: pointer;
-            font-size: 11px;
-            font-weight: bold;
-        }
+body::before{
+    content:"";
+    position:fixed;
+    inset:0;
+    pointer-events:none;
+    z-index:0;
 
-        .copy-btn:hover {
-            background: rgba(0, 170, 255, 0.25);
-        }
+    background-image:
+        linear-gradient(rgba(0,234,255,.025) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(0,234,255,.025) 1px, transparent 1px);
 
-        .group {
-            margin-bottom: 18px;
-        }
+    background-size:42px 42px;
 
-        label {
-            display: block;
-            margin-bottom: 8px;
-            color: #aebbd0;
-            font-size: 13px;
-            font-weight: 600;
-        }
+    mask-image:linear-gradient(to bottom, black, transparent);
+}
 
-        .input-wrapper {
-            position: relative;
-        }
+body::after{
+    content:"";
+    position:fixed;
+    width:100%;
+    height:1px;
+    left:0;
+    top:-10%;
+    z-index:0;
 
-        input {
-            width: 100%;
-            height: 50px;
-            border-radius: 12px;
-            border: 1px solid #1d3150;
-            outline: none;
-            background: #08111f;
-            color: #fff;
-            padding: 0 15px;
-            font-size: 14px;
-            transition: .2s;
-        }
+    background:linear-gradient(90deg, transparent, rgba(0,234,255,.55), rgba(124,60,255,.55), transparent);
 
-        input[type="password"] {
-            padding-left: 45px;
-        }
+    box-shadow:0 0 20px rgba(0,234,255,.5);
 
-        input:focus {
-            border-color: #008cff;
-            box-shadow: 0 0 10px rgba(0, 140, 255, .15);
-        }
+    animation:scan 7s linear infinite;
+}
 
-        .toggle-password {
-            position: absolute;
-            left: 10px;
-            top: 50%;
-            transform: translateY(-50%);
-            background: none;
-            border: none;
-            cursor: pointer;
-            color: #4a5568;
-            padding: 5px;
-            display: flex;
-            align-items: center;
-        }
+@keyframes scan{
+    0%{ top:-10%; opacity:0; }
+    10%{ opacity:1; }
+    90%{ opacity:1; }
+    100%{ top:110%; opacity:0; }
+}
 
-        .toggle-password:hover {
-            color: #00aaff;
-        }
+.settings-wrap{
+    width:100%;
+    max-width:480px;
+    position:relative;
+    z-index:1;
 
-        .toggle-password svg {
-            width: 20px;
-            height: 20px;
-            fill: currentColor;
-        }
+    animation:appear .7s ease;
+}
 
-        /* قدرت پسورد */
-        .password-strength {
-            margin-top: 6px;
-            height: 4px;
-            background: #1c2d42;
-            border-radius: 2px;
-            overflow: hidden;
-            display: none;
-        }
+@keyframes appear{
+    from{ opacity:0; transform:translateY(25px) scale(.96); }
+    to{ opacity:1; transform:translateY(0) scale(1); }
+}
 
-        .strength-bar {
-            height: 100%;
-            width: 0%;
-            transition: 0.3s;
-        }
+/* GLOW */
+.glow{
+    position:absolute;
+    width:260px;
+    height:260px;
+    top:-100px;
+    left:-110px;
+    border-radius:50%;
+    background:#00eaff;
+    filter:blur(120px);
+    opacity:.12;
+    pointer-events:none;
+}
 
-        .strength-text {
-            margin-top: 4px;
-            font-size: 11px;
-            display: none;
-        }
+.glow2{
+    position:absolute;
+    width:240px;
+    height:240px;
+    right:-110px;
+    bottom:-100px;
+    border-radius:50%;
+    background:#7c3cff;
+    filter:blur(120px);
+    opacity:.15;
+    pointer-events:none;
+}
 
-        .button {
-            width: 100%;
-            height: 52px;
-            border: 0;
-            border-radius: 12px;
-            cursor: pointer;
-            color: white;
-            font-size: 15px;
-            font-weight: bold;
-            background: linear-gradient(135deg, #0077ff, #00b7ff);
-            box-shadow: 0 5px 15px rgba(0, 130, 255, .2);
-            transition: .2s;
-        }
+/* CARD */
+.card{
+    position:relative;
+    padding:28px 24px 22px;
+    border-radius:30px;
 
-        .button:hover {
-            transform: translateY(-1px);
-            box-shadow: 0 8px 20px rgba(0, 150, 255, .3);
-        }
+    background:linear-gradient(145deg, rgba(10,17,36,.95), rgba(3,5,15,.95));
 
-        .button:disabled {
-            opacity: .6;
-            cursor: wait;
-        }
+    border:1px solid rgba(0,220,255,.20);
 
-        .back {
-            display: block;
-            text-align: center;
-            margin-top: 18px;
-            color: #71819a;
-            text-decoration: none;
-            font-size: 13px;
-            transition: .2s;
-        }
+    backdrop-filter:blur(30px);
 
-        .back:hover {
-            color: #00aaff;
-        }
+    box-shadow:
+        0 30px 90px rgba(0,0,0,.7),
+        0 0 50px rgba(0,220,255,.08),
+        inset 0 1px rgba(255,255,255,.08);
 
-        .message {
-            display: none;
-            margin-bottom: 18px;
-            padding: 12px;
-            border-radius: 10px;
-            text-align: center;
-            font-size: 13px;
-            font-weight: bold;
-        }
+    overflow:hidden;
+}
 
-        .message.error {
-            display: block;
-            background: rgba(255, 45, 45, .1);
-            border: 1px solid rgba(255, 45, 45, .2);
-            color: #ff6b6b;
-        }
+.card::before{
+    content:"";
+    position:absolute;
+    top:0;
+    left:10%;
+    width:80%;
+    height:2px;
 
-        .message.success {
-            display: block;
-            background: rgba(0, 220, 130, .1);
-            border: 1px solid rgba(0, 220, 130, .2);
-            color: #00e68a;
-        }
+    background:linear-gradient(90deg, transparent, #00eaff, #2874ff, #9b4dff, transparent);
 
-        .divider {
-            display: flex;
-            align-items: center;
-            margin: 20px 0 15px;
-            color: #4a5568;
-            font-size: 11px;
-        }
+    box-shadow:0 0 15px #00eaff, 0 0 30px rgba(124,60,255,.5);
+}
 
-        .divider::before,
-        .divider::after {
-            content: '';
-            flex: 1;
-            height: 1px;
-            background: #1d3150;
-        }
+/* HEADER */
+.brand{
+    text-align:center;
+    position:relative;
+    z-index:2;
+    margin-bottom:5px;
+}
 
-        .divider span {
-            padding: 0 10px;
-        }
+.logo-wrap{
+    width:85px;
+    height:85px;
+    margin:0 auto 12px;
+    border-radius:22px;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    background:rgba(0,0,0,.28);
+    border:1px solid rgba(0,234,255,.20);
 
-        .toast {
-            position: fixed;
-            bottom: 20px;
-            left: 50%;
-            transform: translateX(-50%) translateY(100px);
-            background: #00e68a;
-            color: #000;
-            padding: 10px 20px;
-            border-radius: 8px;
-            font-size: 12px;
-            font-weight: bold;
-            box-shadow: 0 5px 15px rgba(0, 230, 138, 0.3);
-            opacity: 0;
-            transition: 0.3s;
-            z-index: 1000;
-        }
+    box-shadow:
+        0 0 30px rgba(0,234,255,.13),
+        0 0 60px rgba(124,60,255,.08),
+        inset 0 0 25px rgba(0,234,255,.04);
 
-        .toast.show {
-            opacity: 1;
-            transform: translateX(-50%) translateY(0);
-        }
-    </style>
+    overflow:hidden;
+    animation:logoGlow 3s ease-in-out infinite;
+}
+
+.logo-wrap img{
+    width:100%;
+    height:100%;
+    object-fit:cover;
+    display:block;
+}
+
+@keyframes logoGlow{
+    0%,100%{ box-shadow: 0 0 25px rgba(0,234,255,.12), 0 0 50px rgba(124,60,255,.06); }
+    50%{ box-shadow: 0 0 35px rgba(0,234,255,.25), 0 0 65px rgba(124,60,255,.14); }
+}
+
+.brand h1{
+    font-size:24px;
+    font-weight:900;
+    letter-spacing:1px;
+
+    background:linear-gradient(90deg, #fff, #00eaff, #4285ff, #a14dff);
+    -webkit-background-clip:text;
+    -webkit-text-fill-color:transparent;
+    background-clip:text;
+
+    text-shadow:0 0 25px rgba(0,234,255,.15);
+}
+
+.brand p{
+    margin-top:6px;
+    color:#64748b;
+    font-size:10px;
+    letter-spacing:2px;
+    font-weight:700;
+}
+
+/* STATUS */
+.status{
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    gap:8px;
+    width:max-content;
+    margin:16px auto 22px;
+    padding:7px 13px;
+    border-radius:30px;
+    background:rgba(0,234,255,.035);
+    border:1px solid rgba(0,234,255,.10);
+    color:#8290a7;
+    font-size:10px;
+    letter-spacing:1px;
+    font-weight:700;
+}
+
+.status-dot{
+    width:6px;
+    height:6px;
+    border-radius:50%;
+    background:#00eaff;
+    box-shadow:0 0 10px #00eaff;
+    animation:pulse 1.7s infinite;
+}
+
+@keyframes pulse{
+    0%,100%{ opacity:1; transform:scale(1); }
+    50%{ opacity:.45; transform:scale(.7); }
+}
+
+/* CURRENT USER CARD */
+.current{
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    gap:10px;
+    margin-bottom:22px;
+    padding:13px 15px;
+    background:rgba(0,234,255,.03);
+    border:1px solid rgba(0,234,255,.12);
+    border-radius:14px;
+    position:relative;
+    z-index:2;
+}
+
+.current-info{
+    display:flex;
+    align-items:center;
+    gap:10px;
+    color:#9aa9c1;
+    font-size:12px;
+    font-weight:700;
+}
+
+.current-info svg{
+    width:16px;
+    height:16px;
+    fill:#00eaff;
+    filter:drop-shadow(0 0 5px rgba(0,234,255,.5));
+}
+
+.current strong{
+    color:#00eaff;
+    font-weight:900;
+    margin-right:4px;
+    text-shadow:0 0 10px rgba(0,234,255,.3);
+}
+
+.copy-btn{
+    background:rgba(0,234,255,.08);
+    border:1px solid rgba(0,234,255,.25);
+    color:#00eaff;
+    padding:6px 11px;
+    border-radius:8px;
+    cursor:pointer;
+    font-size:10px;
+    font-weight:800;
+    letter-spacing:.5px;
+    transition:.2s;
+    display:flex;
+    align-items:center;
+    gap:5px;
+    font-family:Vazirmatn,Arial,sans-serif;
+}
+
+.copy-btn:hover{
+    background:rgba(0,234,255,.15);
+    box-shadow:0 0 12px rgba(0,234,255,.25);
+    transform:translateY(-1px);
+}
+
+.copy-btn svg{
+    width:12px;
+    height:12px;
+    fill:currentColor;
+}
+
+/* FORM */
+.form{
+    position:relative;
+    z-index:2;
+}
+
+.group{
+    margin-bottom:16px;
+}
+
+label{
+    display:flex;
+    align-items:center;
+    gap:6px;
+    margin-bottom:8px;
+    color:#9aa9c1;
+    font-size:11px;
+    font-weight:800;
+    letter-spacing:1px;
+}
+
+label .icon-dot{
+    color:#00eaff;
+    text-shadow:0 0 8px rgba(0,234,255,.6);
+    font-size:12px;
+}
+
+.input-wrap{
+    position:relative;
+}
+
+.input-icon{
+    position:absolute;
+    right:15px;
+    top:50%;
+    transform:translateY(-50%);
+    color:#465671;
+    font-size:12px;
+    pointer-events:none;
+    transition:.2s;
+}
+
+input{
+    width:100%;
+    height:52px;
+    padding:0 40px 0 15px;
+    border-radius:14px;
+    border:1px solid rgba(255,255,255,.075);
+    background:rgba(2,7,18,.92);
+    color:white;
+    outline:none;
+    font-size:13px;
+    transition:.25s;
+    box-shadow:inset 0 0 15px rgba(0,0,0,.2);
+    font-family:Vazirmatn,Arial,sans-serif;
+}
+
+input[type="password"]{
+    padding-left:48px;
+    letter-spacing:3px;
+}
+
+input:focus{
+    border-color:rgba(0,234,255,.55);
+    box-shadow:
+        0 0 0 3px rgba(0,234,255,.04),
+        0 0 25px rgba(0,234,255,.12);
+}
+
+.input-wrap:focus-within .input-icon{
+    color:#00eaff;
+    text-shadow:0 0 10px rgba(0,234,255,.5);
+}
+
+input::placeholder{
+    color:#3d4b63;
+    font-size:12px;
+}
+
+.toggle-password{
+    position:absolute;
+    left:12px;
+    top:50%;
+    transform:translateY(-50%);
+    background:none;
+    border:0;
+    cursor:pointer;
+    color:#465671;
+    padding:5px;
+    display:flex;
+    align-items:center;
+    border-radius:6px;
+    transition:.2s;
+}
+
+.toggle-password:hover{
+    color:#00eaff;
+    text-shadow:0 0 10px rgba(0,234,255,.5);
+    background:rgba(0,234,255,.05);
+}
+
+.toggle-password svg{
+    width:18px;
+    height:18px;
+    fill:currentColor;
+}
+
+/* PASSWORD STRENGTH */
+.password-strength{
+    margin-top:8px;
+    height:4px;
+    background:rgba(2,7,18,.9);
+    border:1px solid rgba(255,255,255,.05);
+    border-radius:10px;
+    overflow:hidden;
+    display:none;
+}
+
+.strength-bar{
+    height:100%;
+    width:0%;
+    transition:.4s;
+    border-radius:10px;
+    box-shadow:0 0 10px currentColor;
+}
+
+.strength-text{
+    margin-top:6px;
+    font-size:10px;
+    font-weight:800;
+    text-align:left;
+    letter-spacing:.5px;
+    display:none;
+}
+
+/* DIVIDER */
+.divider{
+    display:flex;
+    align-items:center;
+    margin:22px 0 18px;
+    color:#52627c;
+    font-size:9px;
+    font-weight:800;
+    letter-spacing:2px;
+    text-transform:uppercase;
+}
+
+.divider::before,
+.divider::after{
+    content:"";
+    flex:1;
+    height:1px;
+    background:linear-gradient(90deg, transparent, rgba(0,234,255,.2), transparent);
+}
+
+.divider span{
+    padding:0 12px;
+    color:#00eaff;
+    text-shadow:0 0 10px rgba(0,234,255,.3);
+}
+
+/* BUTTON */
+.btn{
+    position:relative;
+    width:100%;
+    height:54px;
+    margin-top:8px;
+    border:0;
+    border-radius:16px;
+    overflow:hidden;
+    color:white;
+    font-weight:900;
+    font-size:12px;
+    letter-spacing:1.5px;
+    cursor:pointer;
+    font-family:Vazirmatn,Arial,sans-serif;
+
+    background:linear-gradient(100deg, #00bff5, #2865ff, #713cff, #a53cff);
+
+    box-shadow:
+        0 0 25px rgba(0,191,255,.20),
+        0 10px 30px rgba(0,0,0,.3),
+        inset 0 1px rgba(255,255,255,.25);
+
+    transition:.25s;
+
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    gap:8px;
+}
+
+.btn svg{
+    width:16px;
+    height:16px;
+    fill:#fff;
+}
+
+.btn::before{
+    content:"";
+    position:absolute;
+    top:0;
+    left:-100%;
+    width:70%;
+    height:100%;
+    background:linear-gradient(90deg, transparent, rgba(255,255,255,.25), transparent);
+    transform:skewX(-20deg);
+    transition:.6s;
+}
+
+.btn:hover:not(:disabled){
+    transform:translateY(-2px);
+    box-shadow:
+        0 0 35px rgba(0,191,255,.3),
+        0 12px 35px rgba(0,0,0,.4);
+}
+
+.btn:hover:not(:disabled)::before{
+    left:130%;
+}
+
+.btn:active:not(:disabled){
+    transform:scale(.985);
+}
+
+.btn:disabled{
+    opacity:.65;
+    cursor:wait;
+}
+
+/* MESSAGE */
+.message{
+    display:none;
+    margin-bottom:18px;
+    padding:12px;
+    border-radius:13px;
+    text-align:center;
+    font-size:11px;
+    font-weight:700;
+    letter-spacing:.3px;
+    animation:slideDown .3s ease;
+}
+
+@keyframes slideDown{
+    from{ opacity:0; transform:translateY(-8px); }
+    to{ opacity:1; transform:translateY(0); }
+}
+
+.message.error{
+    display:block;
+    color:#ff7895;
+    border:1px solid rgba(255,70,110,.22);
+    background:rgba(255,50,90,.065);
+}
+
+.message.success{
+    display:block;
+    color:#4dffb4;
+    border:1px solid rgba(0,255,170,.22);
+    background:rgba(0,255,170,.065);
+}
+
+/* BACK LINK */
+.back{
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    gap:6px;
+    margin-top:22px;
+    padding-top:17px;
+    border-top:1px solid rgba(255,255,255,.055);
+    color:#46546b;
+    text-decoration:none;
+    font-size:11px;
+    font-weight:700;
+    letter-spacing:.5px;
+    transition:.2s;
+}
+
+.back svg{
+    width:12px;
+    height:12px;
+    fill:currentColor;
+    transition:.2s;
+}
+
+.back:hover{
+    color:#00eaff;
+    text-shadow:0 0 10px rgba(0,234,255,.3);
+}
+
+.back:hover svg{
+    transform:translateX(4px);
+}
+
+/* TOAST */
+.toast{
+    position:fixed;
+    bottom:30px;
+    left:50%;
+    transform:translateX(-50%) translateY(100px);
+    background:linear-gradient(100deg, #00bff5, #2865ff, #713cff);
+    color:#fff;
+    padding:12px 25px;
+    border-radius:12px;
+    font-size:11px;
+    font-weight:800;
+    letter-spacing:.5px;
+    box-shadow:0 10px 30px rgba(0,191,255,.4);
+    opacity:0;
+    transition:.3s;
+    z-index:1000;
+}
+
+.toast.show{
+    opacity:1;
+    transform:translateX(-50%) translateY(0);
+}
+
+/* SPINNER */
+.spinner{
+    width:16px;
+    height:16px;
+    border:2px solid rgba(255,255,255,.3);
+    border-top-color:#fff;
+    border-radius:50%;
+    animation:spin .8s linear infinite;
+}
+
+@keyframes spin{
+    to{ transform:rotate(360deg); }
+}
+
+/* MOBILE */
+@media(max-width:420px){
+    .card{
+        padding:25px 18px 20px;
+        border-radius:26px;
+    }
+
+    .logo-wrap{
+        width:72px;
+        height:72px;
+        border-radius:20px;
+    }
+
+    .brand h1{
+        font-size:21px;
+    }
+
+    .brand p{
+        font-size:9px;
+    }
+
+    input{
+        height:50px;
+    }
+
+    .btn{
+        height:52px;
+    }
+
+    .copy-btn{
+        font-size:9px;
+        padding:5px 9px;
+    }
+
+    .current-info{
+        font-size:11px;
+    }
+}
+</style>
 </head>
 
 <body>
 
-<div class="container">
+<div class="settings-wrap">
+
+    <div class="glow"></div>
+    <div class="glow2"></div>
 
     <div class="card">
 
-        <div class="header">
-            <div class="title">تنظیمات پنل</div>
-            <div class="subtitle">تغییر نام کاربری و رمز عبور ادمین</div>
+        <div class="brand">
+
+            <div class="logo-wrap">
+                <img
+                    src="/static/pablo-logo.png"
+                    alt="PabloPanel Logo"
+                >
+            </div>
+
+            <h1>تنظیمات پنل</h1>
+
+            <p>MANAGE PANEL CREDENTIALS</p>
+
+            <div class="status">
+                <span class="status-dot"></span>
+                SYSTEM ONLINE
+            </div>
+
         </div>
 
         <div class="current">
-            <div>مدیر فعلی: <strong>{{ current_username }}</strong></div>
-            <button class="copy-btn" onclick="copyUsername()">کپی نام کاربری</button>
+            <div class="current-info">
+                <svg viewBox="0 0 24 24">
+                    <path d="M12,4A4,4 0 0,1 16,8A4,4 0 0,1 12,12A4,4 0 0,1 8,8A4,4 0 0,1 12,4M12,14C16.42,14 20,15.79 20,18V20H4V18C4,15.79 7.58,14 12,14Z"/>
+                </svg>
+                <span>مدیر فعلی: <strong>{{ current_username }}</strong></span>
+            </div>
+            <button class="copy-btn" onclick="copyUsername()">
+                <svg viewBox="0 0 24 24">
+                    <path d="M19,21H8V7H19M19,5H8A2,2 0 0,0 6,7V21A2,2 0 0,0 8,23H19A2,2 0 0,0 21,21V7A2,2 0 0,0 19,5M16,1H4A2,2 0 0,0 2,3V17H4V3H16V1Z"/>
+                </svg>
+                COPY
+            </button>
         </div>
 
         <div id="message" class="message"></div>
 
-        <form id="settingsForm">
+        <form id="settingsForm" class="form">
 
             <div class="group">
-                <label>نام کاربری جدید</label>
-                <input
-                    id="username"
-                    type="text"
-                    minlength="3"
-                    autocomplete="username"
-                    placeholder="نام کاربری جدید را وارد کنید"
-                    value="{{ current_username }}"
-                    required
-                >
+                <label>
+                    <span class="icon-dot">◈</span>
+                    NEW USERNAME
+                </label>
+                <div class="input-wrap">
+                    <span class="input-icon">◈</span>
+                    <input
+                        id="username"
+                        type="text"
+                        minlength="3"
+                        autocomplete="username"
+                        placeholder="نام کاربری جدید را وارد کنید"
+                        value="{{ current_username }}"
+                        required
+                    >
+                </div>
             </div>
 
             <div class="divider">
-                <span>تغییر رمز عبور</span>
+                <span>CHANGE PASSWORD</span>
             </div>
 
             <div class="group">
-                <label>رمز عبور فعلی</label>
-                <div class="input-wrapper">
+                <label>
+                    <span class="icon-dot">◆</span>
+                    CURRENT PASSWORD
+                </label>
+                <div class="input-wrap">
+                    <span class="input-icon">◆</span>
                     <input
                         id="current_password"
                         type="password"
@@ -334,8 +790,12 @@
             </div>
 
             <div class="group">
-                <label>رمز عبور جدید</label>
-                <div class="input-wrapper">
+                <label>
+                    <span class="icon-dot">◆</span>
+                    NEW PASSWORD
+                </label>
+                <div class="input-wrap">
+                    <span class="input-icon">◆</span>
                     <input
                         id="password"
                         type="password"
@@ -346,7 +806,7 @@
                     >
                     <button type="button" class="toggle-password" onclick="togglePassword('password', this)">
                         <svg viewBox="0 0 24 24">
-                            <path d="M12,9A3,3 0 0,0 9,12A3,3 0 0,0 12,15A3,3 0 0,0 15,12A3,3 0 0,0 12,9M12,17A5,5 0 0,1 7,12A5,5 0 0,1 12,7A5,5 0 0,1 17,12A5,5 0 0,1 12,17M12,4.5C7,4.5 2.73,7.61 1,12C2.73,16.39 7,19.5 12,19.5C17,19.5 21.27,16.39 23,12C21.27,7.61 17,4.5 12,4.5Z"/>
+                            <path d="M12,9A3,3 0 0,0 9,12A3,3 0 0,0 12,15A3,3 0 0,0 15,12A3,3 0 0,0 15,12A3,3 0 0,0 12,9M12,17A5,5 0 0,1 7,12A5,5 0 0,1 12,7A5,5 0 0,1 17,12A5,5 0 0,1 12,17M12,4.5C7,4.5 2.73,7.61 1,12C2.73,16.39 7,19.5 12,19.5C17,19.5 21.27,16.39 23,12C21.27,7.61 17,4.5 12,4.5Z"/>
                         </svg>
                     </button>
                 </div>
@@ -357,14 +817,18 @@
             </div>
 
             <div class="group">
-                <label>تکرار رمز عبور جدید</label>
-                <div class="input-wrapper">
+                <label>
+                    <span class="icon-dot">✓</span>
+                    CONFIRM PASSWORD
+                </label>
+                <div class="input-wrap">
+                    <span class="input-icon">✓</span>
                     <input
                         id="confirm_password"
                         type="password"
                         minlength="4"
                         autocomplete="new-password"
-                        placeholder="تکرار رمز عبور جدید را وارد کنید"
+                        placeholder="تکرار رمز عبور جدید"
                         required
                     >
                     <button type="button" class="toggle-password" onclick="togglePassword('confirm_password', this)">
@@ -377,21 +841,29 @@
 
             <button
                 id="saveButton"
-                class="button"
+                class="btn"
                 type="submit"
             >
-                ذخیره تغییرات
+                <svg viewBox="0 0 24 24">
+                    <path d="M15,9H5V5H15M12,19A3,3 0 0,1 9,16A3,3 0 0,1 12,13A3,3 0 0,1 15,16A3,3 0 0,1 12,19M17,3H5C3.89,3 3,3.9 3,5V19A2,2 0 0,0 5,21H19A2,2 0 0,0 21,19V7L17,3Z"/>
+                </svg>
+                SAVE CHANGES
             </button>
 
         </form>
 
-        <a class="back" href="/dashboard">بازگشت به داشبورد</a>
+        <a class="back" href="/dashboard">
+            <svg viewBox="0 0 24 24">
+                <path d="M20,11V13H8L13.5,18.5L12.08,19.92L4.16,12L12.08,4.08L13.5,5.5L8,11H20Z"/>
+            </svg>
+            BACK TO DASHBOARD
+        </a>
 
     </div>
 
 </div>
 
-<div class="toast" id="toast">کپی شد!</div>
+<div class="toast" id="toast">COPIED ✓</div>
 
 <script>
 const form = document.getElementById("settingsForm");
@@ -467,22 +939,26 @@ passwordInput.addEventListener("input", function() {
     if (/[^A-Za-z0-9]/.test(pwd)) strength += 20;
     
     if (strength <= 20) {
-        text = "ضعیف";
-        color = "#ff4444";
+        text = "WEAK | ضعیف";
+        color = "#ff4466";
     } else if (strength <= 40) {
-        text = "متوسط";
+        text = "MEDIUM | متوسط";
         color = "#ffa500";
     } else if (strength <= 60) {
-        text = "خوب";
+        text = "GOOD | خوب";
         color = "#ffd700";
+    } else if (strength <= 80) {
+        text = "STRONG | قوی";
+        color = "#4dffb4";
     } else {
-        text = "قوی";
-        color = "#00e68a";
+        text = "EXCELLENT | عالی";
+        color = "#00eaff";
     }
     
     strengthFill.style.width = strength + "%";
     strengthFill.style.background = color;
-    strengthText.textContent = "قدرت رمز عبور: " + text;
+    strengthFill.style.color = color;
+    strengthText.textContent = text;
     strengthText.style.color = color;
 });
 
@@ -510,7 +986,7 @@ form.addEventListener("submit", async function(event) {
     }
 
     button.disabled = true;
-    button.textContent = "در حال ذخیره...";
+    button.innerHTML = '<div class="spinner"></div> SAVING...';
 
     try {
         const response = await fetch("/api/settings", {
@@ -530,20 +1006,20 @@ form.addEventListener("submit", async function(event) {
         if (!response.ok || data.status !== "success") {
             showMessage(data.message || "خطایی رخ داد", "error");
             button.disabled = false;
-            button.textContent = "ذخیره تغییرات";
+            button.innerHTML = '<svg viewBox="0 0 24 24"><path d="M15,9H5V5H15M12,19A3,3 0 0,1 9,16A3,3 0 0,1 12,13A3,3 0 0,1 15,16A3,3 0 0,1 12,19M17,3H5C3.89,3 3,3.9 3,5V19A2,2 0 0,0 5,21H19A2,2 0 0,0 21,19V7L17,3Z"/></svg> SAVE CHANGES';
             return;
         }
 
-        showMessage("تغییرات با موفقیت ذخیره شد. در حال انتقال به صفحه ورود...", "success");
+        showMessage("✓ تغییرات ذخیره شد. در حال انتقال به صفحه ورود...", "success");
 
         setTimeout(function() {
             window.location.href = "/login";
         }, 1500);
 
     } catch (error) {
-        showMessage("خطا در ارتباط با سرور. لطفاً دوباره تلاش کنید", "error");
+        showMessage("خطا در ارتباط با سرور. دوباره تلاش کنید", "error");
         button.disabled = false;
-        button.textContent = "ذخیره تغییرات";
+        button.innerHTML = '<svg viewBox="0 0 24 24"><path d="M15,9H5V5H15M12,19A3,3 0 0,1 9,16A3,3 0 0,1 12,13A3,3 0 0,1 15,16A3,3 0 0,1 12,19M17,3H5C3.89,3 3,3.9 3,5V19A2,2 0 0,0 5,21H19A2,2 0 0,0 21,19V7L17,3Z"/></svg> SAVE CHANGES';
     }
 });
 </script>
