@@ -13,6 +13,12 @@ import urllib.parse
 from datetime import datetime
 from flask import Flask, render_template, request, jsonify, Response, redirect, url_for, session
 
+# کتابخانه تلگرام (به صورت امن ایمپورت می‌شود)
+try:
+    import telebot
+except ImportError:
+    telebot = None
+
 app = Flask(__name__)
 app.secret_key = os.environ.get("SECRET_KEY", "pablo-rail-secret-key-change-me")
 
@@ -35,7 +41,7 @@ ONLINE_USERS = {}
 ONLINE_THRESHOLD = 90
 
 # =========================================================
-# دیتابیس
+# دیتابیس و توابع تنظیمات اختصاصی ربات
 # =========================================================
 
 def get_db():
@@ -48,6 +54,7 @@ def init_db():
     conn = get_db()
     c = conn.cursor()
 
+    # جدول کاربران
     c.execute("""
         CREATE TABLE IF NOT EXISTS users (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -61,8 +68,41 @@ def init_db():
         )
     """)
 
+    # جدول تنظیمات عمومی (ذخیره امن توکن تلگرام)
+    c.execute("""
+        CREATE TABLE IF NOT EXISTS settings (
+            key TEXT PRIMARY KEY,
+            value TEXT
+        )
+    """)
+
     conn.commit()
     conn.close()
+
+
+def get_setting(key, default=""):
+    try:
+        conn = get_db()
+        c = conn.cursor()
+        c.execute("SELECT value FROM settings WHERE key=?", (key,))
+        row = c.fetchone()
+        conn.close()
+        return row[0] if row else default
+    except Exception:
+        return default
+
+
+def set_setting(key, value):
+    try:
+        conn = get_db()
+        c = conn.cursor()
+        c.execute("INSERT OR REPLACE INTO settings (key, value) VALUES (?, ?)", (key, str(value)))
+        conn.commit()
+        conn.close()
+        return True
+    except Exception as e:
+        print("Error saving setting:", e)
+        return False
 
 
 # =========================================================
@@ -891,8 +931,15 @@ def settings():
         return redirect(url_for("login"))
 
     username, _ = get_admin_credentials()
+    tg_token = get_setting("telegram_token", "")
+    tg_admin_id = get_setting("telegram_admin_id", "")
 
-    return render_template("settings.html", current_username=username)
+    return render_template(
+        "settings.html",
+        current_username=username,
+        telegram_token=tg_token,
+        telegram_admin_id=tg_admin_id
+    )
 
 
 @app.route("/api/settings", methods=["POST"])
@@ -905,6 +952,8 @@ def update_settings():
     new_username = data.get("username", "").strip()
     new_password = data.get("password", "")
     current_password = data.get("current_password", "")
+    tg_token = data.get("telegram_token", "").strip()
+    tg_admin_id = data.get("telegram_admin_id", "").strip()
 
     if not new_username:
         return jsonify({"status": "error", "message": "نام کاربری جدید الزامی است"}), 400
@@ -925,6 +974,9 @@ def update_settings():
 
     try:
         save_admin_credentials(new_username, new_password)
+        set_setting("telegram_token", tg_token)
+        set_setting("telegram_admin_id", tg_admin_id)
+        
         session.pop("admin", None)
         return jsonify({"status": "success", "message": "اطلاعات ورود با موفقیت تغییر کرد"})
     except Exception as e:
@@ -1185,6 +1237,135 @@ def subscription(user_uuid):
 
 
 # =========================================================
+# بخش موتور و منطق ربات تلگرام (کاملا مستقل و ایزوله)
+# =========================================================
+
+def run_telegram_bot_thread():
+    if not telebot:
+        print("[Telegram Bot] telebot module not found. Skipping bot launch.")
+        return
+
+    while True:
+        try:
+            tg_token = get_setting("telegram_token", "").strip()
+            tg_admin_id = get_setting("telegram_admin_id", "").strip()
+
+            if not tg_token:
+                time.sleep(10)
+                continue
+
+            bot = telebot.TeleBot(tg_token)
+
+            @bot.message_handler(commands=['start'])
+            def cmd_start(message):
+                chat_id = str(message.chat.id)
+                if chat_id == tg_admin_id:
+                    markup = telebot.types.ReplyKeyboardMarkup(row_width=2, resize_keyboard=True)
+                    btn_status = telebot.types.KeyboardButton('📊 وضعیت پنل')
+                    btn_users = telebot.types.KeyboardButton('👥 لیست کاربران')
+                    markup.add(btn_status, btn_users)
+                    
+                    bot.send_message(
+                        message.chat.id,
+                        "⚡ **سلام ادمین گرامی!**\nبه پنل مدیریت تلگرامی Pablo خوش آمدید.\nیکی از دکمه‌های زیر را انتخاب کنید:",
+                        reply_markup=markup,
+                        parse_mode="Markdown"
+                    )
+                else:
+                    bot.send_message(
+                        message.chat.id,
+                        "👋 **سلام کاربر عزیز!**\nبرای استعلام مشخصات کانکشن خود، لطفاً **نام کاربری** یا **UUID** خود را ارسال کنید:"
+                    )
+
+            @bot.message_handler(func=lambda m: True)
+            def handle_messages(message):
+                text = message.text.strip()
+                chat_id = str(message.chat.id)
+
+                # بخش ادمین
+                if chat_id == tg_admin_id:
+                    if text == '📊 وضعیت پنل':
+                        users = get_all_users()
+                        total = len(users)
+                        active = sum(1 for u in users if u["enabled"] == 1)
+                        total_bytes = sum(u["used_bytes"] for u in users)
+                        total_gb = round(total_bytes / (1024 ** 3), 2)
+
+                        msg = (
+                            f"🌐 **وضعیت سرور Pablo Panel**\n"
+                            f"━━━━━━━━━━━━━━━━━━\n"
+                            f"👥 کل کاربران: {total} کاربر\n"
+                            f"🟢 کاربران فعال: {active} کاربر\n"
+                            f"📊 مصرف کل دیتابیس: {total_gb} GB\n"
+                            f"━━━━━━━━━━━━━━━━━━"
+                        )
+                        bot.send_message(chat_id, msg, parse_mode="Markdown")
+
+                    elif text == '👥 لیست کاربران':
+                        users = get_all_users()
+                        if not users:
+                            bot.send_message(chat_id, "هیچ کاربری یافت نشد.")
+                            return
+
+                        msg = "👥 **لیست کاربران پنل (نمایش ۱۵ کاربر آخر):**\n\n"
+                        for u in users[:15]:
+                            status = "🟢" if u["enabled"] == 1 else "🔴"
+                            used = round(u["used_bytes"] / (1024 ** 3), 2)
+                            msg += f"{status} `{u['name']}` | {used}/{u['quota_gb']} GB\n"
+
+                        if len(users) > 15:
+                            msg += f"\nو {len(users) - 15} کاربر دیگر..."
+
+                        bot.send_message(chat_id, msg, parse_mode="Markdown")
+
+                # بخش مشتری
+                else:
+                    conn = get_db()
+                    c = conn.cursor()
+                    c.execute("SELECT * FROM users WHERE name = ? OR uuid = ?", (text, text))
+                    user = c.fetchone()
+                    conn.close()
+
+                    if user:
+                        u = dict(user)
+                        used_gb = round(u["used_bytes"] / (1024 ** 3), 2)
+                        status = "فعال 🟢" if u["enabled"] == 1 else "غیرفعال 🔴"
+                        
+                        try:
+                            created_dt = datetime.fromisoformat(u["created_at"])
+                            elapsed_days = (datetime.now() - created_dt).days
+                            days_left = max(0, u["expire_days"] - elapsed_days)
+                        except Exception:
+                            days_left = u["expire_days"]
+
+                        msg = (
+                            f"👤 **مشخصات اشتراک شما**\n"
+                            f"━━━━━━━━━━━━━\n"
+                            f"🆔 نام کاربری: `{u['name']}`\n"
+                            f"⚡ وضعیت اکانت: {status}\n"
+                            f"📊 ترافیک مصرفی: {used_gb} GB\n"
+                            f"💾 سقف حجم کل: {u['quota_gb']} GB\n"
+                            f"📅 اعتبار باقی‌مانده: {days_left} روز\n"
+                            f"━━━━━━━━━━━━━"
+                        )
+                        bot.send_message(chat_id, msg, parse_mode="Markdown")
+                    else:
+                        bot.send_message(chat_id, "❌ کاربری با این نام یا UUID یافت نشد.")
+
+            print("[Telegram Bot] Bot polling started successfully.")
+            bot.infinity_polling(timeout=10, long_polling_timeout=5)
+
+        except Exception as e:
+            print("[Telegram Bot] Polling crash/error, restarting in 10s:", e)
+            time.sleep(10)
+
+
+def start_telegram_bot():
+    t = threading.Thread(target=run_telegram_bot_thread, daemon=True)
+    t.start()
+
+
+# =========================================================
 # شروع برنامه
 # =========================================================
 
@@ -1193,4 +1374,5 @@ if __name__ == "__main__":
     restart_xray()
     start_nginx()
     start_stats_collector()
+    start_telegram_bot()  # استارت کاملا مستقل ربات بدون مسدود کردن پورت ریلوی
     app.run(host="127.0.0.1", port=FLASK_PORT)
