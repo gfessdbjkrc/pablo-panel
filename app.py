@@ -10,11 +10,26 @@ import threading
 import socket
 import struct
 import urllib.parse
+
 from datetime import datetime
-from flask import Flask, render_template, request, jsonify, Response, redirect, url_for, session
+
+from flask import (
+    Flask,
+    render_template,
+    request,
+    jsonify,
+    Response,
+    redirect,
+    url_for,
+    session
+)
+
 
 app = Flask(__name__)
-app.secret_key = os.environ.get("SECRET_KEY", "pablo-rail-secret-key-change-me")
+app.secret_key = os.environ.get(
+    "SECRET_KEY",
+    "pablo-rail-secret-key-change-me"
+)
 
 # =========================================================
 # تنظیمات اصلی
@@ -31,20 +46,35 @@ DB_PATH = "users.db"
 XRAY_CONFIG_PATH = "xray_config.json"
 NGINX_CONFIG_PATH = "nginx.conf"
 
+# ---------------------------------------------------------
+# وضعیت آنلاین
+# ---------------------------------------------------------
+
 ONLINE_USERS = {}
+
+# کاربر اگر در 90 ثانیه اخیر ترافیک داشته باشد Online است
 ONLINE_THRESHOLD = 90
+
+# هر 10 ثانیه آمار Xray بررسی می‌شود
+STATS_INTERVAL = 10
 
 # =========================================================
 # دیتابیس
 # =========================================================
 
 def get_db():
-    conn = sqlite3.connect(DB_PATH, check_same_thread=False)
+    conn = sqlite3.connect(
+        DB_PATH,
+        check_same_thread=False
+    )
+
     conn.row_factory = sqlite3.Row
+
     return conn
 
 
 def init_db():
+
     conn = get_db()
     c = conn.cursor()
 
@@ -70,6 +100,7 @@ def init_db():
 # =========================================================
 
 def get_admin_credentials():
+
     env_user = os.environ.get("ADMIN_USER")
     env_pass = os.environ.get("ADMIN_PASS")
 
@@ -79,12 +110,26 @@ def get_admin_credentials():
     settings_file = "panel_settings.json"
 
     if os.path.exists(settings_file):
+
         try:
-            with open(settings_file, "r", encoding="utf-8") as f:
+
+            with open(
+                settings_file,
+                "r",
+                encoding="utf-8"
+            ) as f:
+
                 data = json.load(f)
 
-            username = data.get("username", "admin")
-            password = data.get("password", "admin")
+            username = data.get(
+                "username",
+                "admin"
+            )
+
+            password = data.get(
+                "password",
+                "admin"
+            )
 
             return username, password
 
@@ -95,6 +140,7 @@ def get_admin_credentials():
 
 
 def save_admin_credentials(username, password):
+
     settings_file = "panel_settings.json"
 
     data = {
@@ -102,8 +148,18 @@ def save_admin_credentials(username, password):
         "password": password
     }
 
-    with open(settings_file, "w", encoding="utf-8") as f:
-        json.dump(data, f, ensure_ascii=False, indent=2)
+    with open(
+        settings_file,
+        "w",
+        encoding="utf-8"
+    ) as f:
+
+        json.dump(
+            data,
+            f,
+            ensure_ascii=False,
+            indent=2
+        )
 
 
 # =========================================================
@@ -111,51 +167,102 @@ def save_admin_credentials(username, password):
 # =========================================================
 
 def get_all_users():
+
     conn = get_db()
     c = conn.cursor()
 
-    c.execute("SELECT * FROM users ORDER BY id DESC")
+    c.execute("""
+        SELECT *
+        FROM users
+        ORDER BY id DESC
+    """)
 
-    rows = [dict(r) for r in c.fetchall()]
+    rows = [
+        dict(r)
+        for r in c.fetchall()
+    ]
 
     conn.close()
 
     return rows
 
 
+def is_user_online(name):
+
+    last_seen = ONLINE_USERS.get(
+        name,
+        0
+    )
+
+    return (
+        time.time() - last_seen
+    ) < ONLINE_THRESHOLD
+
+
 def enrich_user(u):
+
     try:
-        created_dt = datetime.fromisoformat(u["created_at"])
-        elapsed_days = (datetime.now() - created_dt).days
-        days_left = max(0, u["expire_days"] - elapsed_days)
+
+        created_dt = datetime.fromisoformat(
+            u["created_at"]
+        )
+
+        elapsed_days = (
+            datetime.now() - created_dt
+        ).days
+
+        days_left = max(
+            0,
+            u["expire_days"] - elapsed_days
+        )
+
     except Exception:
+
         days_left = u["expire_days"]
 
-    used_gb = round(u["used_bytes"] / (1024 ** 3), 2)
-    quota_gb = round(float(u["quota_gb"]), 2)
+    used_gb = round(
+        u["used_bytes"] / (1024 ** 3),
+        2
+    )
+
+    quota_gb = round(
+        float(u["quota_gb"]),
+        2
+    )
 
     if quota_gb > 0:
-        percent = min(100, round((used_gb / quota_gb) * 100, 1))
+
+        percent = min(
+            100,
+            round(
+                (used_gb / quota_gb) * 100,
+                1
+            )
+        )
+
     else:
+
         percent = 0
 
     u["used_gb"] = used_gb
     u["days_left"] = days_left
     u["percent"] = percent
     u["is_expired"] = days_left <= 0
-    u["created_date"] = u["created_at"][:10] if u.get("created_at") else ""
-    u["is_online"] = is_user_online(u["name"])
+    u["created_date"] = (
+        u["created_at"][:10]
+        if u.get("created_at")
+        else ""
+    )
+
+    u["is_online"] = is_user_online(
+        u["name"]
+    )
 
     return u
 
 
-def is_user_online(name):
-    last_seen = ONLINE_USERS.get(name, 0)
-    return (time.time() - last_seen) < ONLINE_THRESHOLD
-
-
 # =========================================================
-# ساخت کانفیگ Xray (با Stats API)
+# ساخت کانفیگ Xray
 # =========================================================
 
 def build_xray_config():
@@ -183,6 +290,7 @@ def build_xray_config():
         })
 
     config = {
+
         "log": {
             "loglevel": "warning"
         },
@@ -191,74 +299,121 @@ def build_xray_config():
 
         "api": {
             "tag": "api",
-            "services": ["StatsService"]
+            "services": [
+                "StatsService"
+            ]
         },
 
         "policy": {
+
             "levels": {
+
                 "0": {
+
                     "statsUserUplink": True,
                     "statsUserDownlink": True
+
                 }
+
             },
+
             "system": {
+
                 "statsInboundUplink": True,
                 "statsInboundDownlink": True
+
             }
+
         },
 
         "inbounds": [
+
+            # -------------------------------------------------
+            # Xray API
+            # -------------------------------------------------
+
             {
                 "tag": "api",
+
                 "port": XRAY_API_PORT,
+
                 "listen": "127.0.0.1",
+
                 "protocol": "dokodemo-door",
+
                 "settings": {
                     "address": "127.0.0.1"
                 }
             },
+
+            # -------------------------------------------------
+            # VLESS
+            # -------------------------------------------------
+
             {
                 "tag": "vless-in",
+
                 "port": XRAY_PORT,
+
                 "listen": "127.0.0.1",
+
                 "protocol": "vless",
 
                 "settings": {
+
                     "clients": clients,
+
                     "decryption": "none"
+
                 },
 
                 "streamSettings": {
+
                     "network": "ws",
+
                     "security": "none",
 
                     "wsSettings": {
                         "path": "/ws"
                     }
+
                 }
             }
+
         ],
 
         "outbounds": [
+
             {
                 "protocol": "freedom",
                 "tag": "direct"
             }
+
         ],
 
+        # -----------------------------------------------------
+        # API را به outbound غیرموجود وصل نمی‌کنیم.
+        # StatsService از API داخلی Xray استفاده می‌شود.
+        # -----------------------------------------------------
+
         "routing": {
-            "rules": [
-                {
-                    "type": "field",
-                    "inboundTag": ["api"],
-                    "outboundTag": "api"
-                }
-            ]
+            "rules": []
         }
+
     }
 
-    with open(XRAY_CONFIG_PATH, "w", encoding="utf-8") as f:
-        json.dump(config, f, indent=2, ensure_ascii=False)
+    with open(
+        XRAY_CONFIG_PATH,
+        "w",
+        encoding="utf-8"
+    ) as f:
+
+        json.dump(
+            config,
+            f,
+            indent=2,
+            ensure_ascii=False
+        )
 
 
 # =========================================================
@@ -267,22 +422,59 @@ def build_xray_config():
 
 def restart_xray():
 
-    build_xray_config()
+    try:
+
+        build_xray_config()
+
+    except Exception as e:
+
+        print(
+            "Xray config build error:",
+            e
+        )
+
+        return
 
     try:
-        subprocess.run(["pkill", "-9", "-f", "xray"], check=False)
-        time.sleep(0.3)
+
+        subprocess.run(
+            [
+                "pkill",
+                "-9",
+                "-f",
+                "xray"
+            ],
+            check=False
+        )
+
+        time.sleep(0.5)
+
     except Exception:
         pass
 
     try:
+
         subprocess.Popen(
-            ["/usr/local/bin/xray/xray", "run", "-c", XRAY_CONFIG_PATH],
+            [
+                "/usr/local/bin/xray/xray",
+                "run",
+                "-c",
+                XRAY_CONFIG_PATH
+            ],
             stdout=sys.stdout,
             stderr=sys.stderr
         )
+
+        print(
+            "Xray restarted successfully."
+        )
+
     except Exception as e:
-        print("Xray start error:", e)
+
+        print(
+            "Xray start error:",
+            e
+        )
 
 
 # =========================================================
@@ -290,136 +482,351 @@ def restart_xray():
 # =========================================================
 
 def xray_query_stats():
+
     stats = {}
 
     try:
+
         result = subprocess.run(
+
             [
                 "/usr/local/bin/xray/xray",
+
                 "api",
+
                 "statsquery",
-                "--server=127.0.0.1:" + str(XRAY_API_PORT),
-                "-pattern", "user..."
+
+                "--server=127.0.0.1:"
+                + str(XRAY_API_PORT),
+
+                "-pattern",
+                "user..."
             ],
+
             capture_output=True,
+
             text=True,
+
             timeout=5
         )
 
         if result.returncode != 0:
+
+            if result.stderr:
+
+                print(
+                    "Xray statsquery error:",
+                    result.stderr
+                )
+
             return stats
 
-        data = json.loads(result.stdout)
-        stat_list = data.get("stat", [])
+        if not result.stdout.strip():
+
+            return stats
+
+        data = json.loads(
+            result.stdout
+        )
+
+        stat_list = data.get(
+            "stat",
+            []
+        )
 
         for item in stat_list:
-            name = item.get("name", "")
-            value = int(item.get("value", 0))
 
-            parts = name.split(">>>")
-            if len(parts) >= 4 and parts[0] == "user":
-                user_email = parts[1]
+            name = item.get(
+                "name",
+                ""
+            )
 
-                if user_email not in stats:
-                    stats[user_email] = 0
+            value = int(
+                item.get(
+                    "value",
+                    0
+                )
+            )
 
-                stats[user_email] += value
+            parts = name.split(
+                ">>>"
+            )
+
+            if len(parts) < 4:
+                continue
+
+            if parts[0] != "user":
+                continue
+
+            user_email = parts[1]
+
+            if parts[2] != "traffic":
+                continue
+
+            direction = parts[3]
+
+            if direction not in (
+                "uplink",
+                "downlink"
+            ):
+                continue
+
+            if user_email not in stats:
+
+                stats[user_email] = 0
+
+            stats[user_email] += value
 
     except subprocess.TimeoutExpired:
-        pass
+
+        print(
+            "Xray stats query timeout"
+        )
+
+    except json.JSONDecodeError:
+
+        print(
+            "Xray returned invalid stats JSON"
+        )
+
     except Exception as e:
-        print("Stats query error:", e)
+
+        print(
+            "Stats query error:",
+            e
+        )
 
     return stats
 
 
-def xray_reset_user_stats(user_email):
+# =========================================================
+# صفر کردن آمار یک کاربر
+# =========================================================
+
+def xray_reset_user_stats(
+    user_email
+):
+
     try:
-        for direction in ["uplink", "downlink"]:
+
+        for direction in [
+            "uplink",
+            "downlink"
+        ]:
+
             subprocess.run(
+
                 [
                     "/usr/local/bin/xray/xray",
+
                     "api",
+
                     "statsquery",
-                    "--server=127.0.0.1:" + str(XRAY_API_PORT),
+
+                    "--server=127.0.0.1:"
+                    + str(XRAY_API_PORT),
+
                     "-reset",
-                    "-pattern", f"user>>>{user_email}>>>traffic>>>{direction}"
+
+                    "-pattern",
+
+                    f"user>>>{user_email}"
+                    f">>>traffic>>>{direction}"
                 ],
+
                 capture_output=True,
+
                 timeout=3
             )
+
     except Exception:
         pass
 
 
 # =========================================================
-# تایمر پس‌زمینه (جمع‌آوری آمار + چک حجم)
+# جمع‌آوری واقعی مصرف
 # =========================================================
 
-PREVIOUS_STATS = {}
-
-
 def stats_collector():
-    global PREVIOUS_STATS
 
     while True:
+
         try:
-            time.sleep(30)
+
+            time.sleep(
+                STATS_INTERVAL
+            )
 
             stats = xray_query_stats()
-
-            if not stats:
-                continue
 
             conn = get_db()
             c = conn.cursor()
 
             need_restart = False
 
-            for user_email, total_bytes in stats.items():
+            # -----------------------------------------------
+            # تمام کاربران
+            # -----------------------------------------------
 
-                c.execute(
-                    "UPDATE users SET used_bytes = used_bytes + ? WHERE name = ?",
-                    (total_bytes, user_email)
+            c.execute("""
+                SELECT
+                    id,
+                    name,
+                    quota_gb,
+                    used_bytes,
+                    enabled
+                FROM users
+            """)
+
+            users = c.fetchall()
+
+            for row in users:
+
+                user_id = row["id"]
+
+                username = row["name"]
+
+                current_traffic = int(
+                    stats.get(
+                        username,
+                        0
+                    )
                 )
 
-                xray_reset_user_stats(user_email)
+                # -------------------------------------------
+                # کاربر ترافیک داشته
+                # -------------------------------------------
 
-                prev = PREVIOUS_STATS.get(user_email, 0)
-                if total_bytes > 0 or total_bytes != prev:
-                    ONLINE_USERS[user_email] = time.time()
+                if current_traffic > 0:
 
-                PREVIOUS_STATS[user_email] = total_bytes
+                    # آنلاین
+                    ONLINE_USERS[
+                        username
+                    ] = time.time()
 
-                c.execute(
-                    "SELECT id, quota_gb, used_bytes, enabled FROM users WHERE name = ?",
-                    (user_email,)
-                )
+                    # ---------------------------------------
+                    # مصرف واقعی را ثبت کن
+                    # ---------------------------------------
 
-                row = c.fetchone()
+                    c.execute(
+                        """
+                        UPDATE users
+                        SET used_bytes =
+                            used_bytes + ?
+                        WHERE id = ?
+                        """,
 
-                if row and row["enabled"] == 1:
-                    used_gb = row["used_bytes"] / (1024 ** 3)
-                    if row["quota_gb"] > 0 and used_gb >= row["quota_gb"]:
-                        c.execute(
-                            "UPDATE users SET enabled = 0 WHERE id = ?",
-                            (row["id"],)
+                        (
+                            current_traffic,
+                            user_id
                         )
-                        need_restart = True
-                        print(f"[QUOTA] User '{user_email}' exceeded quota. Disabled.")
+                    )
+
+                    # ---------------------------------------
+                    # بعد از ثبت مصرف، آمار Xray را صفر کن
+                    # ---------------------------------------
+
+                    xray_reset_user_stats(
+                        username
+                    )
+
+                # -------------------------------------------
+                # اطلاعات جدید کاربر
+                # -------------------------------------------
+
+                c.execute(
+                    """
+                    SELECT
+                        quota_gb,
+                        used_bytes,
+                        enabled
+                    FROM users
+                    WHERE id = ?
+                    """,
+
+                    (user_id,)
+                )
+
+                updated = c.fetchone()
+
+                if not updated:
+                    continue
+
+                quota_gb = float(
+                    updated["quota_gb"] or 0
+                )
+
+                used_bytes = int(
+                    updated["used_bytes"] or 0
+                )
+
+                # -------------------------------------------
+                # بررسی حجم
+                # -------------------------------------------
+
+                if quota_gb > 0:
+
+                    quota_bytes = int(
+                        quota_gb *
+                        (1024 ** 3)
+                    )
+
+                    if used_bytes >= quota_bytes:
+
+                        if updated["enabled"] == 1:
+
+                            c.execute(
+                                """
+                                UPDATE users
+                                SET enabled = 0
+                                WHERE id = ?
+                                """,
+                                (user_id,)
+                            )
+
+                            # دیگر Online نمایش داده نشود
+                            ONLINE_USERS.pop(
+                                username,
+                                None
+                            )
+
+                            need_restart = True
+
+                            print(
+                                "[QUOTA] "
+                                f"User '{username}' "
+                                f"reached quota "
+                                f"({quota_gb} GB) "
+                                "and was disabled."
+                            )
 
             conn.commit()
             conn.close()
 
+            # -----------------------------------------------
+            # اگر حجم کاربری تمام شد
+            # Xray با لیست جدید کاربران اجرا شود
+            # -----------------------------------------------
+
             if need_restart:
+
                 restart_xray()
 
         except Exception as e:
-            print("Stats collector error:", e)
+
+            print(
+                "Stats collector error:",
+                e
+            )
 
 
 def start_stats_collector():
-    t = threading.Thread(target=stats_collector, daemon=True)
+
+    t = threading.Thread(
+        target=stats_collector,
+        daemon=True
+    )
+
     t.start()
 
 
@@ -429,15 +836,21 @@ def start_stats_collector():
 
 def start_nginx():
 
-    port = os.environ.get("PORT", "8080")
+    port = os.environ.get(
+        "PORT",
+        "8080"
+    )
 
     nginx_conf = f"""
+
 pid /run/nginx.pid;
 
 error_log /dev/stderr warn;
 
 events {{
+
     worker_connections 1024;
+
 }}
 
 http {{
@@ -453,8 +866,11 @@ http {{
     keepalive_timeout 65;
 
     map $http_upgrade $connection_upgrade {{
+
         default upgrade;
+
         '' close;
+
     }}
 
     server {{
@@ -462,6 +878,10 @@ http {{
         listen {port};
 
         server_name _;
+
+        # -----------------------------------------------
+        # VLESS WebSocket
+        # -----------------------------------------------
 
         location ~ ^/ws {{
 
@@ -486,7 +906,12 @@ http {{
             proxy_read_timeout 86400s;
 
             proxy_send_timeout 86400s;
+
         }}
+
+        # -----------------------------------------------
+        # Flask Panel
+        # -----------------------------------------------
 
         location / {{
 
@@ -499,27 +924,53 @@ http {{
             proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
 
             proxy_set_header X-Forwarded-Proto $scheme;
+
         }}
+
     }}
+
 }}
+
 """
 
-    with open(NGINX_CONFIG_PATH, "w", encoding="utf-8") as f:
-        f.write(nginx_conf)
+    with open(
+        NGINX_CONFIG_PATH,
+        "w",
+        encoding="utf-8"
+    ) as f:
+
+        f.write(
+            nginx_conf
+        )
 
     try:
-        subprocess.run(["pkill", "-9", "-f", "nginx"], check=False)
+
+        subprocess.run(
+            [
+                "pkill",
+                "-9",
+                "-f",
+                "nginx"
+            ],
+            check=False
+        )
+
         time.sleep(0.3)
+
     except Exception:
         pass
 
-    subprocess.Popen([
-        "nginx",
-        "-c",
-        os.path.abspath(NGINX_CONFIG_PATH),
-        "-g",
-        "daemon off;"
-    ])
+    subprocess.Popen(
+        [
+            "nginx",
+            "-c",
+            os.path.abspath(
+                NGINX_CONFIG_PATH
+            ),
+            "-g",
+            "daemon off;"
+        ]
+    )
 
 
 # =========================================================
@@ -774,408 +1225,1137 @@ def make_all_vless_configs(user, host):
 
 @app.route("/")
 def home():
+
     if "admin" not in session:
-        return redirect(url_for("login"))
-    return redirect(url_for("dashboard"))
+        return redirect(
+            url_for("login")
+        )
+
+    return redirect(
+        url_for("dashboard")
+    )
 
 
-@app.route("/login", methods=["GET", "POST"])
+# =========================================================
+# Login
+# =========================================================
+
+@app.route(
+    "/login",
+    methods=["GET", "POST"]
+)
 def login():
+
     if request.method == "POST":
-        username = request.form.get("username", "").strip()
-        password = request.form.get("password", "")
 
-        current_username, current_password = get_admin_credentials()
+        username = request.form.get(
+            "username",
+            ""
+        ).strip()
 
-        if username == current_username and password == current_password:
+        password = request.form.get(
+            "password",
+            ""
+        )
+
+        current_username, current_password = (
+            get_admin_credentials()
+        )
+
+        if (
+            username == current_username
+            and
+            password == current_password
+        ):
+
             session["admin"] = True
-            return redirect(url_for("dashboard"))
 
-        return render_template("login.html", error="نام کاربری یا رمز عبور اشتباه است!")
+            return redirect(
+                url_for("dashboard")
+            )
 
-    return render_template("login.html", error=None)
+        return render_template(
+            "login.html",
+            error="نام کاربری یا رمز عبور اشتباه است!"
+        )
 
+    return render_template(
+        "login.html",
+        error=None
+    )
+
+
+# =========================================================
+# Logout
+# =========================================================
 
 @app.route("/logout")
 def logout():
-    session.pop("admin", None)
-    return redirect(url_for("login"))
 
+    session.pop(
+        "admin",
+        None
+    )
+
+    return redirect(
+        url_for("login")
+    )
+
+
+# =========================================================
+# Dashboard
+# =========================================================
 
 @app.route("/dashboard")
 def dashboard():
+
     if "admin" not in session:
-        return redirect(url_for("login"))
+        return redirect(
+            url_for("login")
+        )
 
     users = get_all_users()
 
-    total_gb = sum(u["quota_gb"] for u in users)
-    total_used = sum(u["used_bytes"] for u in users) / (1024 ** 3)
-    active_count = sum(1 for u in users if u["enabled"] == 1)
+    total_gb = sum(
+        float(u["quota_gb"] or 0)
+        for u in users
+    )
+
+    total_used = sum(
+        int(u["used_bytes"] or 0)
+        for u in users
+    ) / (1024 ** 3)
+
+    active_count = sum(
+        1
+        for u in users
+        if u["enabled"] == 1
+    )
+
+    online_count = sum(
+        1
+        for u in users
+        if is_user_online(u["name"])
+    )
 
     return render_template(
         "dashboard.html",
+
         users=users,
+
         total_users=len(users),
+
         active_users=active_count,
-        total_gb=round(total_gb, 2),
-        total_used=round(total_used, 2)
+
+        online_users=online_count,
+
+        total_gb=round(
+            total_gb,
+            2
+        ),
+
+        total_used=round(
+            total_used,
+            2
+        )
     )
 
+
+# =========================================================
+# صفحه کاربران
+# =========================================================
 
 @app.route("/users")
 def users_page():
+
     if "admin" not in session:
-        return redirect(url_for("login"))
+        return redirect(
+            url_for("login")
+        )
 
     raw_users = get_all_users()
-    users = [enrich_user(u) for u in raw_users]
 
-    total_gb = sum(u["quota_gb"] for u in raw_users)
-    total_used = sum(u["used_bytes"] for u in raw_users) / (1024 ** 3)
-    active_count = sum(1 for u in users if u["enabled"] == 1 and not u["is_expired"])
-    disabled_count = sum(1 for u in users if u["enabled"] == 0)
-    expired_count = sum(1 for u in users if u["is_expired"])
-    online_count = sum(1 for u in users if u["is_online"])
+    users = [
+        enrich_user(u)
+        for u in raw_users
+    ]
+
+    total_gb = sum(
+        float(u["quota_gb"] or 0)
+        for u in raw_users
+    )
+
+    total_used = sum(
+        int(u["used_bytes"] or 0)
+        for u in raw_users
+    ) / (1024 ** 3)
+
+    active_count = sum(
+        1
+        for u in users
+        if (
+            u["enabled"] == 1
+            and
+            not u["is_expired"]
+        )
+    )
+
+    disabled_count = sum(
+        1
+        for u in users
+        if u["enabled"] == 0
+    )
+
+    expired_count = sum(
+        1
+        for u in users
+        if u["is_expired"]
+    )
+
+    online_count = sum(
+        1
+        for u in users
+        if u["is_online"]
+    )
 
     return render_template(
         "users.html",
+
         users=users,
+
         total_users=len(users),
+
         active_users=active_count,
+
         disabled_users=disabled_count,
+
         expired_users=expired_count,
+
         online_users=online_count,
-        total_gb=round(total_gb, 2),
-        total_used=round(total_used, 2)
+
+        total_gb=round(
+            total_gb,
+            2
+        ),
+
+        total_used=round(
+            total_used,
+            2
+        )
     )
 
 
+# =========================================================
+# API کاربران آنلاین
+# =========================================================
+
 @app.route("/api/online_users")
 def api_online_users():
+
     if "admin" not in session:
-        return jsonify({"status": "error"}), 401
+
+        return jsonify({
+            "status": "error"
+        }), 401
 
     raw_users = get_all_users()
+
     online = []
 
+    now = time.time()
+
     for u in raw_users:
-        if is_user_online(u["name"]):
-            last_seen = ONLINE_USERS.get(u["name"], 0)
-            seconds_ago = int(time.time() - last_seen)
+
+        if (
+            u["enabled"] == 1
+            and
+            is_user_online(u["name"])
+        ):
+
+            last_seen = ONLINE_USERS.get(
+                u["name"],
+                0
+            )
+
+            seconds_ago = int(
+                now - last_seen
+            )
 
             online.append({
+
                 "id": u["id"],
+
                 "name": u["name"],
-                "used_gb": round(u["used_bytes"] / (1024 ** 3), 2),
-                "quota_gb": u["quota_gb"],
-                "seconds_ago": seconds_ago
+
+                "used_gb": round(
+                    u["used_bytes"]
+                    / (1024 ** 3),
+                    2
+                ),
+
+                "quota_gb": float(
+                    u["quota_gb"] or 0
+                ),
+
+                "seconds_ago": seconds_ago,
+
+                "online": True
+
             })
 
     return jsonify({
+
         "status": "success",
+
         "count": len(online),
+
         "users": online
+
     })
 
 
+# =========================================================
+# Settings
+# =========================================================
+
 @app.route("/settings")
 def settings():
+
     if "admin" not in session:
-        return redirect(url_for("login"))
+        return redirect(
+            url_for("login")
+        )
 
-    username, _ = get_admin_credentials()
+    username, _ = (
+        get_admin_credentials()
+    )
 
-    return render_template("settings.html", current_username=username)
+    return render_template(
+        "settings.html",
+        current_username=username
+    )
 
 
-@app.route("/api/settings", methods=["POST"])
+@app.route(
+    "/api/settings",
+    methods=["POST"]
+)
 def update_settings():
+
     if "admin" not in session:
-        return jsonify({"status": "error", "message": "دسترسی غیرمجاز"}), 401
 
-    data = request.get_json(silent=True) or {}
+        return jsonify({
+            "status": "error",
+            "message": "دسترسی غیرمجاز"
+        }), 401
 
-    new_username = data.get("username", "").strip()
-    new_password = data.get("password", "")
-    current_password = data.get("current_password", "")
+    data = request.get_json(
+        silent=True
+    ) or {}
+
+    new_username = data.get(
+        "username",
+        ""
+    ).strip()
+
+    new_password = data.get(
+        "password",
+        ""
+    )
+
+    current_password = data.get(
+        "current_password",
+        ""
+    )
 
     if not new_username:
-        return jsonify({"status": "error", "message": "نام کاربری جدید الزامی است"}), 400
+
+        return jsonify({
+            "status": "error",
+            "message": "نام کاربری جدید الزامی است"
+        }), 400
 
     if not new_password:
-        return jsonify({"status": "error", "message": "رمز عبور جدید الزامی است"}), 400
 
-    username, password = get_admin_credentials()
+        return jsonify({
+            "status": "error",
+            "message": "رمز عبور جدید الزامی است"
+        }), 400
+
+    username, password = (
+        get_admin_credentials()
+    )
 
     if current_password != password:
-        return jsonify({"status": "error", "message": "رمز عبور فعلی اشتباه است"}), 400
+
+        return jsonify({
+            "status": "error",
+            "message": "رمز عبور فعلی اشتباه است"
+        }), 400
 
     if len(new_username) < 3:
-        return jsonify({"status": "error", "message": "نام کاربری حداقل باید ۳ کاراکتر باشد"}), 400
+
+        return jsonify({
+            "status": "error",
+            "message": "نام کاربری حداقل باید ۳ کاراکتر باشد"
+        }), 400
 
     if len(new_password) < 4:
-        return jsonify({"status": "error", "message": "رمز عبور حداقل باید ۴ کاراکتر باشد"}), 400
+
+        return jsonify({
+            "status": "error",
+            "message": "رمز عبور حداقل باید ۴ کاراکتر باشد"
+        }), 400
 
     try:
-        save_admin_credentials(new_username, new_password)
-        session.pop("admin", None)
-        return jsonify({"status": "success", "message": "اطلاعات ورود با موفقیت تغییر کرد"})
+
+        save_admin_credentials(
+            new_username,
+            new_password
+        )
+
+        session.pop(
+            "admin",
+            None
+        )
+
+        return jsonify({
+            "status": "success",
+            "message": "اطلاعات ورود با موفقیت تغییر کرد"
+        })
+
     except Exception as e:
-        return jsonify({"status": "error", "message": str(e)}), 500
+
+        return jsonify({
+            "status": "error",
+            "message": str(e)
+        }), 500
 
 
-@app.route("/api/add_user", methods=["POST"])
+# =========================================================
+# اضافه کردن کاربر
+# =========================================================
+
+@app.route(
+    "/api/add_user",
+    methods=["POST"]
+)
 def add_user():
+
     if "admin" not in session:
-        return jsonify({"status": "error", "message": "دسترسی غیرمجاز"}), 401
 
-    data = request.json or {}
+        return jsonify({
+            "status": "error",
+            "message": "دسترسی غیرمجاز"
+        }), 401
 
-    name = data.get("name", "").strip()
+    data = request.get_json(
+        silent=True
+    ) or {}
+
+    name = data.get(
+        "name",
+        ""
+    ).strip()
 
     try:
-        quota = float(data.get("quota", 30))
-        days = int(data.get("days", 30))
+
+        quota = float(
+            data.get(
+                "quota",
+                30
+            )
+        )
+
+        days = int(
+            data.get(
+                "days",
+                30
+            )
+        )
+
     except Exception:
-        return jsonify({"status": "error", "message": "حجم یا تعداد روز نامعتبر است"}), 400
+
+        return jsonify({
+            "status": "error",
+            "message": "حجم یا تعداد روز نامعتبر است"
+        }), 400
 
     if not name:
-        return jsonify({"status": "error", "message": "نام کاربر الزامی است"}), 400
+
+        return jsonify({
+            "status": "error",
+            "message": "نام کاربر الزامی است"
+        }), 400
 
     if quota <= 0:
-        return jsonify({"status": "error", "message": "حجم باید بیشتر از صفر باشد"}), 400
+
+        return jsonify({
+            "status": "error",
+            "message": "حجم باید بیشتر از صفر باشد"
+        }), 400
 
     if days <= 0:
-        return jsonify({"status": "error", "message": "تعداد روز باید بیشتر از صفر باشد"}), 400
 
-    user_uuid = str(uuid.uuid4())
+        return jsonify({
+            "status": "error",
+            "message": "تعداد روز باید بیشتر از صفر باشد"
+        }), 400
+
+    user_uuid = str(
+        uuid.uuid4()
+    )
 
     try:
+
         conn = get_db()
         c = conn.cursor()
 
         c.execute(
             """
             INSERT INTO users
-            (name, uuid, quota_gb, expire_days, created_at)
-            VALUES (?, ?, ?, ?, ?)
+            (
+                name,
+                uuid,
+                quota_gb,
+                used_bytes,
+                expire_days,
+                created_at,
+                enabled
+            )
+            VALUES (?, ?, ?, ?, ?, ?, ?)
             """,
-            (name, user_uuid, quota, days, datetime.now().isoformat())
+
+            (
+                name,
+                user_uuid,
+                quota,
+                0,
+                days,
+                datetime.now().isoformat(),
+                1
+            )
         )
 
         conn.commit()
         conn.close()
+
+        ONLINE_USERS.pop(
+            name,
+            None
+        )
 
         restart_xray()
 
-        return jsonify({"status": "success", "message": "کاربر با موفقیت ساخته شد"})
+        return jsonify({
+            "status": "success",
+            "message": "کاربر با موفقیت ساخته شد"
+        })
 
     except sqlite3.IntegrityError:
-        return jsonify({"status": "error", "message": "این نام کاربری قبلاً وجود دارد"}), 400
+
+        return jsonify({
+            "status": "error",
+            "message": "این نام کاربری قبلاً وجود دارد"
+        }), 400
+
     except Exception as e:
-        return jsonify({"status": "error", "message": str(e)}), 500
+
+        return jsonify({
+            "status": "error",
+            "message": str(e)
+        }), 500
 
 
-@app.route("/api/edit_user/<int:user_id>", methods=["POST"])
+# =========================================================
+# ویرایش کاربر / حجم
+# =========================================================
+
+@app.route(
+    "/api/edit_user/<int:user_id>",
+    methods=["POST"]
+)
 def edit_user(user_id):
+
     if "admin" not in session:
-        return jsonify({"status": "error"}), 401
 
-    data = request.get_json(silent=True) or {}
+        return jsonify({
+            "status": "error"
+        }), 401
+
+    data = request.get_json(
+        silent=True
+    ) or {}
 
     try:
-        new_quota = float(data.get("quota_gb", 0))
-        new_days = int(data.get("expire_days", 0))
+
+        new_quota = float(
+            data.get(
+                "quota_gb",
+                0
+            )
+        )
+
+        new_days = int(
+            data.get(
+                "expire_days",
+                0
+            )
+        )
+
     except Exception:
-        return jsonify({"status": "error", "message": "مقادیر نامعتبر"}), 400
 
-    if new_quota <= 0 or new_days <= 0:
-        return jsonify({"status": "error", "message": "حجم و روز باید بیشتر از صفر باشند"}), 400
+        return jsonify({
+            "status": "error",
+            "message": "مقادیر نامعتبر"
+        }), 400
+
+    if new_quota <= 0:
+
+        return jsonify({
+            "status": "error",
+            "message": "حجم باید بیشتر از صفر باشد"
+        }), 400
+
+    if new_days <= 0:
+
+        return jsonify({
+            "status": "error",
+            "message": "روز باید بیشتر از صفر باشد"
+        }), 400
 
     try:
+
         conn = get_db()
         c = conn.cursor()
 
         c.execute(
-            "UPDATE users SET quota_gb=?, expire_days=? WHERE id=?",
-            (new_quota, new_days, user_id)
+            """
+            UPDATE users
+            SET
+                quota_gb = ?,
+                expire_days = ?
+            WHERE id = ?
+            """,
+
+            (
+                new_quota,
+                new_days,
+                user_id
+            )
         )
+
+        if c.rowcount == 0:
+
+            conn.close()
+
+            return jsonify({
+                "status": "error",
+                "message": "کاربر یافت نشد"
+            }), 404
 
         conn.commit()
         conn.close()
 
-        return jsonify({"status": "success", "message": "کاربر با موفقیت ویرایش شد"})
+        return jsonify({
+            "status": "success",
+            "message": "حجم و مدت کاربر با موفقیت تغییر کرد"
+        })
 
     except Exception as e:
-        return jsonify({"status": "error", "message": str(e)}), 500
+
+        return jsonify({
+            "status": "error",
+            "message": str(e)
+        }), 500
 
 
-@app.route("/api/reset_user/<int:user_id>", methods=["POST"])
+# =========================================================
+# صفر کردن مصرف کاربر
+# =========================================================
+
+@app.route(
+    "/api/reset_user/<int:user_id>",
+    methods=["POST"]
+)
 def reset_user(user_id):
+
     if "admin" not in session:
-        return jsonify({"status": "error"}), 401
+
+        return jsonify({
+            "status": "error"
+        }), 401
 
     try:
+
         conn = get_db()
         c = conn.cursor()
 
-        c.execute("SELECT name FROM users WHERE id=?", (user_id,))
+        c.execute(
+            """
+            SELECT name
+            FROM users
+            WHERE id = ?
+            """,
+            (user_id,)
+        )
+
         row = c.fetchone()
 
-        if row:
-            xray_reset_user_stats(row["name"])
+        if not row:
 
+            conn.close()
+
+            return jsonify({
+                "status": "error",
+                "message": "کاربر یافت نشد"
+            }), 404
+
+        username = row["name"]
+
+        # آمار Xray را هم صفر کن
+        xray_reset_user_stats(
+            username
+        )
+
+        # مصرف دیتابیس صفر شود
         c.execute(
-            "UPDATE users SET used_bytes=0, created_at=? WHERE id=?",
-            (datetime.now().isoformat(), user_id)
+            """
+            UPDATE users
+            SET used_bytes = 0
+            WHERE id = ?
+            """,
+            (user_id,)
         )
 
         conn.commit()
         conn.close()
 
-        return jsonify({"status": "success", "message": "ترافیک کاربر صفر شد"})
+        ONLINE_USERS.pop(
+            username,
+            None
+        )
+
+        return jsonify({
+            "status": "success",
+            "message": "ترافیک کاربر صفر شد"
+        })
 
     except Exception as e:
-        return jsonify({"status": "error", "message": str(e)}), 500
+
+        return jsonify({
+            "status": "error",
+            "message": str(e)
+        }), 500
 
 
-@app.route("/api/delete_user/<int:user_id>", methods=["POST"])
+# =========================================================
+# حذف کاربر
+# =========================================================
+
+@app.route(
+    "/api/delete_user/<int:user_id>",
+    methods=["POST"]
+)
 def delete_user(user_id):
+
     if "admin" not in session:
-        return jsonify({"status": "error"}), 401
+
+        return jsonify({
+            "status": "error"
+        }), 401
 
     conn = get_db()
     c = conn.cursor()
 
-    c.execute("DELETE FROM users WHERE id=?", (user_id,))
+    c.execute(
+        """
+        SELECT name
+        FROM users
+        WHERE id = ?
+        """,
+        (user_id,)
+    )
+
+    row = c.fetchone()
+
+    if row:
+
+        ONLINE_USERS.pop(
+            row["name"],
+            None
+        )
+
+    c.execute(
+        """
+        DELETE FROM users
+        WHERE id = ?
+        """,
+        (user_id,)
+    )
 
     conn.commit()
     conn.close()
 
     restart_xray()
 
-    return jsonify({"status": "success", "message": "کاربر با موفقیت حذف شد"})
+    return jsonify({
+        "status": "success",
+        "message": "کاربر با موفقیت حذف شد"
+    })
 
 
-@app.route("/api/toggle_user/<int:user_id>", methods=["POST"])
+# =========================================================
+# فعال / غیرفعال کردن کاربر
+# =========================================================
+
+@app.route(
+    "/api/toggle_user/<int:user_id>",
+    methods=["POST"]
+)
 def toggle_user(user_id):
+
     if "admin" not in session:
-        return jsonify({"status": "error"}), 401
+
+        return jsonify({
+            "status": "error"
+        }), 401
 
     conn = get_db()
     c = conn.cursor()
 
-    c.execute("SELECT enabled FROM users WHERE id=?", (user_id,))
+    c.execute(
+        """
+        SELECT
+            name,
+            enabled
+        FROM users
+        WHERE id = ?
+        """,
+        (user_id,)
+    )
 
     row = c.fetchone()
 
     if not row:
+
         conn.close()
-        return jsonify({"status": "error", "message": "کاربر یافت نشد"}), 404
 
-    new_val = 0 if row[0] == 1 else 1
+        return jsonify({
+            "status": "error",
+            "message": "کاربر یافت نشد"
+        }), 404
 
-    c.execute("UPDATE users SET enabled=? WHERE id=?", (new_val, user_id))
+    new_val = (
+        0
+        if row["enabled"] == 1
+        else 1
+    )
+
+    c.execute(
+        """
+        UPDATE users
+        SET enabled = ?
+        WHERE id = ?
+        """,
+        (
+            new_val,
+            user_id
+        )
+    )
 
     conn.commit()
     conn.close()
 
+    # اگر غیرفعال شد، Online هم نباشد
+    if new_val == 0:
+
+        ONLINE_USERS.pop(
+            row["name"],
+            None
+        )
+
     restart_xray()
 
-    return jsonify({"status": "success", "new_state": new_val})
+    return jsonify({
+        "status": "success",
+        "new_state": new_val
+    })
 
 
-@app.route("/api/user_config/<int:user_id>")
+# =========================================================
+# کانفیگ کاربر
+# =========================================================
+
+@app.route(
+    "/api/user_config/<int:user_id>"
+)
 def user_config(user_id):
+
     if "admin" not in session:
-        return jsonify({"status": "error"}), 401
+
+        return jsonify({
+            "status": "error"
+        }), 401
 
     conn = get_db()
     c = conn.cursor()
 
-    c.execute("SELECT * FROM users WHERE id=?", (user_id,))
+    c.execute(
+        """
+        SELECT *
+        FROM users
+        WHERE id = ?
+        """,
+        (user_id,)
+    )
+
     user = c.fetchone()
 
     conn.close()
 
     if not user:
-        return jsonify({"status": "error", "message": "کاربر یافت نشد"}), 404
+
+        return jsonify({
+            "status": "error",
+            "message": "کاربر یافت نشد"
+        }), 404
 
     host = request.host.split(":")[0]
 
-    configs = make_all_vless_configs(dict(user), host)
+    configs = make_all_vless_configs(
+        dict(user),
+        host
+    )
 
-    sub_link = f"{request.host_url}sub/{user['uuid']}"
+    sub_link = (
+        f"{request.host_url}"
+        f"sub/{user['uuid']}"
+    )
 
     return jsonify({
+
         "status": "success",
+
         "configs": configs,
+
         "sub": sub_link,
+
         "user": dict(user)
+
     })
 
 
-@app.route("/sub/<user_uuid>")
+# =========================================================
+# Subscription
+# =========================================================
+
+@app.route(
+    "/sub/<user_uuid>"
+)
 def subscription(user_uuid):
+
     conn = get_db()
     c = conn.cursor()
 
-    c.execute("SELECT * FROM users WHERE uuid=?", (user_uuid,))
+    c.execute(
+        """
+        SELECT *
+        FROM users
+        WHERE uuid = ?
+        """,
+        (user_uuid,)
+    )
+
     user = c.fetchone()
 
     conn.close()
 
-    if not user or user["enabled"] == 0:
-        return ("User not found or disabled", 404)
+    if not user:
 
-    ua = request.headers.get("User-Agent", "").lower()
+        return (
+            "User not found",
+            404
+        )
+
+    if user["enabled"] == 0:
+
+        return (
+            "User not found or disabled",
+            404
+        )
+
+    # -----------------------------------------------
+    # User-Agent
+    # -----------------------------------------------
+
+    ua = request.headers.get(
+        "User-Agent",
+        ""
+    ).lower()
 
     client_keywords = [
-        "v2ray", "clash", "sing-box", "hiddify",
-        "nekobox", "streisand", "foxray", "shadowrocket", "v2box"
+
+        "v2ray",
+        "clash",
+        "sing-box",
+        "hiddify",
+        "nekobox",
+        "streisand",
+        "foxray",
+        "shadowrocket",
+        "v2box"
+
     ]
 
-    is_client = any(k in ua for k in client_keywords)
+    is_client = any(
+        k in ua
+        for k in client_keywords
+    )
 
     host = request.host.split(":")[0]
 
     user_dict = dict(user)
 
-    all_configs = make_all_vless_configs(user_dict, host)
+    all_configs = make_all_vless_configs(
+        user_dict,
+        host
+    )
+
+    # -----------------------------------------------
+    # اگر کلاینت VPN درخواست کرد
+    # -----------------------------------------------
 
     if is_client:
-        raw_text = "\n".join(item["config"] for item in all_configs)
-        encoded = base64.b64encode(raw_text.encode()).decode()
-        return Response(encoded, mimetype="text/plain")
 
-    created_dt = datetime.fromisoformat(user_dict["created_at"])
-    elapsed_days = (datetime.now() - created_dt).days
-    days_left = max(0, user_dict["expire_days"] - elapsed_days)
+        raw_text = "\n".join(
+            item["config"]
+            for item in all_configs
+        )
 
-    used_gb = round(user_dict["used_bytes"] / (1024 ** 3), 2)
-    remaining_gb = max(0.0, round(user_dict["quota_gb"] - used_gb, 2))
+        encoded = base64.b64encode(
+            raw_text.encode()
+        ).decode()
 
-    percent = (
-        used_gb / user_dict["quota_gb"] * 100
-        if user_dict["quota_gb"] > 0 else 0
+        return Response(
+            encoded,
+            mimetype="text/plain"
+        )
+
+    # -----------------------------------------------
+    # اطلاعات صفحه ساب
+    # -----------------------------------------------
+
+    try:
+
+        created_dt = datetime.fromisoformat(
+            user_dict["created_at"]
+        )
+
+        elapsed_days = (
+            datetime.now() - created_dt
+        ).days
+
+        days_left = max(
+            0,
+            user_dict["expire_days"]
+            - elapsed_days
+        )
+
+    except Exception:
+
+        days_left = user_dict[
+            "expire_days"
+        ]
+
+    used_gb = round(
+        user_dict["used_bytes"]
+        / (1024 ** 3),
+        2
     )
 
-    raw_text = "\n".join(item["config"] for item in all_configs)
-    encoded_sub = base64.b64encode(raw_text.encode()).decode()
+    quota_gb = float(
+        user_dict["quota_gb"]
+    )
+
+    remaining_gb = max(
+        0.0,
+        round(
+            quota_gb - used_gb,
+            2
+        )
+    )
+
+    if quota_gb > 0:
+
+        percent = (
+            used_gb
+            / quota_gb
+            * 100
+        )
+
+    else:
+
+        percent = 0
+
+    percent = min(
+        100,
+        percent
+    )
+
+    raw_text = "\n".join(
+        item["config"]
+        for item in all_configs
+    )
+
+    encoded_sub = base64.b64encode(
+        raw_text.encode()
+    ).decode()
 
     return render_template(
+
         "subscription.html",
+
         user_name=user_dict["name"],
+
         used_gb=used_gb,
-        quota_gb=user_dict["quota_gb"],
+
+        quota_gb=quota_gb,
+
         remaining_gb=remaining_gb,
+
         days_left=days_left,
-        percent=round(percent, 1),
+
+        percent=round(
+            percent,
+            1
+        ),
+
         configs=all_configs,
+
         sub_raw=encoded_sub,
+
         sub_url=request.url
+
     )
+
+
+# =========================================================
+# Health Check
+# =========================================================
+
+@app.route("/health")
+def health():
+
+    return jsonify({
+        "status": "ok",
+        "xray": os.path.exists(
+            "/usr/local/bin/xray/xray"
+        ),
+        "users": len(
+            get_all_users()
+        )
+    })
 
 
 # =========================================================
@@ -1183,8 +2363,33 @@ def subscription(user_uuid):
 # =========================================================
 
 if __name__ == "__main__":
+
+    print(
+        "======================================"
+    )
+
+    print(
+        "        PABLO PANEL STARTING"
+    )
+
+    print(
+        "======================================"
+    )
+
+    # دیتابیس
     init_db()
+
+    # Xray
     restart_xray()
+
+    # Nginx
     start_nginx()
+
+    # جمع‌آوری مصرف
     start_stats_collector()
-    app.run(host="127.0.0.1", port=FLASK_PORT)
+
+    # Flask
+    app.run(
+        host="127.0.0.1",
+        port=FLASK_PORT
+    )
