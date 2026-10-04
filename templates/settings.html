@@ -806,7 +806,7 @@ input::placeholder{
                     >
                     <button type="button" class="toggle-password" onclick="togglePassword('password', this)">
                         <svg viewBox="0 0 24 24">
-                            <path d="M12,9A3,3 0 0,0 9,12A3,3 0 0,0 12,15A3,3 0 0,0 15,12A3,3 0 0,0 15,12A3,3 0 0,0 12,9M12,17A5,5 0 0,1 7,12A5,5 0 0,1 12,7A5,5 0 0,1 17,12A5,5 0 0,1 12,17M12,4.5C7,4.5 2.73,7.61 1,12C2.73,16.39 7,19.5 12,19.5C17,19.5 21.27,16.39 23,12C21.27,7.61 17,4.5 12,4.5Z"/>
+                            <path d="M12,9A3,3 0 0,0 9,12A3,3 0 0,0 12,15A3,3 0 0,0 15,12A3,3 0 0,0 12,9M12,17A5,5 0 0,1 7,12A5,5 0 0,1 12,7A5,5 0 0,1 17,12A5,5 0 0,1 12,17M12,4.5C7,4.5 2.73,7.61 1,12C2.73,16.39 7,19.5 12,19.5C17,19.5 21.27,16.39 23,12C21.27,7.61 17,4.5 12,4.5Z"/>
                         </svg>
                     </button>
                 </div>
@@ -839,10 +839,47 @@ input::placeholder{
                 </div>
             </div>
 
+            <div class="divider" style="margin-top: 35px;">
+                <span>TELEGRAM BOT CONTROL</span>
+            </div>
+
+            <div class="group">
+                <label>
+                    <span class="icon-dot">🤖</span>
+                    TELEGRAM BOT TOKEN
+                </label>
+                <div class="input-wrap">
+                    <span class="input-icon">◈</span>
+                    <input
+                        id="tg_token"
+                        type="text"
+                        placeholder="توکن ربات تلگرام (از BotFather)"
+                        value="{{ telegram_token }}"
+                    >
+                </div>
+            </div>
+
+            <div class="group">
+                <label>
+                    <span class="icon-dot">👤</span>
+                    ADMIN TELEGRAM CHAT ID
+                </label>
+                <div class="input-wrap">
+                    <span class="input-icon">◈</span>
+                    <input
+                        id="tg_admin_id"
+                        type="text"
+                        placeholder="شناسه عددی اکانت شما (از userinfobot)"
+                        value="{{ telegram_admin_id }}"
+                    >
+                </div>
+            </div>
+
             <button
                 id="saveButton"
                 class="btn"
                 type="submit"
+                style="margin-top: 25px;"
             >
                 <svg viewBox="0 0 24 24">
                     <path d="M15,9H5V5H15M12,19A3,3 0 0,1 9,16A3,3 0 0,1 12,13A3,3 0 0,1 15,16A3,3 0 0,1 12,19M17,3H5C3.89,3 3,3.9 3,5V19A2,2 0 0,0 5,21H19A2,2 0 0,0 21,19V7L17,3Z"/>
@@ -969,6 +1006,8 @@ form.addEventListener("submit", async function(event) {
     const currentPassword = document.getElementById("current_password").value;
     const password = document.getElementById("password").value;
     const confirmPassword = document.getElementById("confirm_password").value;
+    const tgToken = document.getElementById("tg_token").value.trim();
+    const tgAdminId = document.getElementById("tg_admin_id").value.trim();
 
     if (username.length < 3) {
         showMessage("نام کاربری باید حداقل ۳ کاراکتر باشد", "error");
@@ -997,7 +1036,9 @@ form.addEventListener("submit", async function(event) {
             body: JSON.stringify({
                 username: username,
                 password: password,
-                current_password: currentPassword
+                current_password: currentPassword,
+                telegram_token: tgToken,
+                telegram_admin_id: tgAdminId
             })
         });
 
