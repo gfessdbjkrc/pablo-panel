@@ -26,10 +26,12 @@ from flask import (
 
 
 app = Flask(__name__)
+
 app.secret_key = os.environ.get(
     "SECRET_KEY",
     "pablo-rail-secret-key-change-me"
 )
+
 
 # =========================================================
 # تنظیمات اصلی
@@ -46,23 +48,19 @@ DB_PATH = "users.db"
 XRAY_CONFIG_PATH = "xray_config.json"
 NGINX_CONFIG_PATH = "nginx.conf"
 
-# ---------------------------------------------------------
-# وضعیت آنلاین
-# ---------------------------------------------------------
-
 ONLINE_USERS = {}
 
-# کاربر اگر در 90 ثانیه اخیر ترافیک داشته باشد Online است
 ONLINE_THRESHOLD = 90
 
-# هر 10 ثانیه آمار Xray بررسی می‌شود
 STATS_INTERVAL = 10
+
 
 # =========================================================
 # دیتابیس
 # =========================================================
 
 def get_db():
+
     conn = sqlite3.connect(
         DB_PATH,
         check_same_thread=False
@@ -221,12 +219,12 @@ def enrich_user(u):
         days_left = u["expire_days"]
 
     used_gb = round(
-        u["used_bytes"] / (1024 ** 3),
+        int(u["used_bytes"] or 0) / (1024 ** 3),
         2
     )
 
     quota_gb = round(
-        float(u["quota_gb"]),
+        float(u["quota_gb"] or 0),
         2
     )
 
@@ -245,17 +243,30 @@ def enrich_user(u):
         percent = 0
 
     u["used_gb"] = used_gb
+    u["quota_gb"] = quota_gb
     u["days_left"] = days_left
     u["percent"] = percent
+
+    u["remaining_gb"] = max(
+        0,
+        round(
+            quota_gb - used_gb,
+            2
+        )
+    )
+
     u["is_expired"] = days_left <= 0
+
     u["created_date"] = (
         u["created_at"][:10]
         if u.get("created_at")
         else ""
     )
 
-    u["is_online"] = is_user_online(
-        u["name"]
+    u["is_online"] = (
+        u["enabled"] == 1
+        and
+        is_user_online(u["name"])
     )
 
     return u
@@ -311,7 +322,8 @@ def build_xray_config():
                 "0": {
 
                     "statsUserUplink": True,
-                    "statsUserDownlink": True
+                    "statsUserDownlink": True,
+                    "statsUserOnline": True
 
                 }
 
@@ -328,10 +340,6 @@ def build_xray_config():
 
         "inbounds": [
 
-            # -------------------------------------------------
-            # Xray API
-            # -------------------------------------------------
-
             {
                 "tag": "api",
 
@@ -345,10 +353,6 @@ def build_xray_config():
                     "address": "127.0.0.1"
                 }
             },
-
-            # -------------------------------------------------
-            # VLESS
-            # -------------------------------------------------
 
             {
                 "tag": "vless-in",
@@ -387,17 +391,31 @@ def build_xray_config():
             {
                 "protocol": "freedom",
                 "tag": "direct"
+            },
+
+            {
+                "protocol": "freedom",
+                "tag": "api"
             }
 
         ],
 
-        # -----------------------------------------------------
-        # API را به outbound غیرموجود وصل نمی‌کنیم.
-        # StatsService از API داخلی Xray استفاده می‌شود.
-        # -----------------------------------------------------
-
         "routing": {
-            "rules": []
+
+            "rules": [
+
+                {
+                    "type": "field",
+
+                    "inboundTag": [
+                        "api"
+                    ],
+
+                    "outboundTag": "api"
+                }
+
+            ]
+
         }
 
     }
@@ -500,7 +518,8 @@ def xray_query_stats():
                 + str(XRAY_API_PORT),
 
                 "-pattern",
-                "user..."
+
+                "user>>>"
             ],
 
             capture_output=True,
@@ -512,12 +531,10 @@ def xray_query_stats():
 
         if result.returncode != 0:
 
-            if result.stderr:
-
-                print(
-                    "Xray statsquery error:",
-                    result.stderr
-                )
+            print(
+                "Xray statsquery error:",
+                result.stderr
+            )
 
             return stats
 
@@ -536,29 +553,37 @@ def xray_query_stats():
 
         for item in stat_list:
 
-            name = item.get(
-                "name",
-                ""
-            )
-
-            value = int(
+            name = str(
                 item.get(
-                    "value",
-                    0
+                    "name",
+                    ""
                 )
             )
+
+            try:
+
+                value = int(
+                    item.get(
+                        "value",
+                        0
+                    )
+                )
+
+            except Exception:
+
+                value = 0
 
             parts = name.split(
                 ">>>"
             )
 
-            if len(parts) < 4:
+            if len(parts) != 4:
                 continue
 
             if parts[0] != "user":
                 continue
 
-            user_email = parts[1]
+            username = parts[1]
 
             if parts[2] != "traffic":
                 continue
@@ -571,11 +596,14 @@ def xray_query_stats():
             ):
                 continue
 
-            if user_email not in stats:
+            if username not in stats:
 
-                stats[user_email] = 0
+                stats[username] = 0
 
-            stats[user_email] += value
+            stats[username] += max(
+                0,
+                value
+            )
 
     except subprocess.TimeoutExpired:
 
@@ -603,18 +631,16 @@ def xray_query_stats():
 # صفر کردن آمار یک کاربر
 # =========================================================
 
-def xray_reset_user_stats(
-    user_email
-):
+def xray_reset_user_stats(user_email):
 
     try:
 
-        for direction in [
+        for direction in (
             "uplink",
             "downlink"
-        ]:
+        ):
 
-            subprocess.run(
+            result = subprocess.run(
 
                 [
                     "/usr/local/bin/xray/xray",
@@ -636,11 +662,24 @@ def xray_reset_user_stats(
 
                 capture_output=True,
 
+                text=True,
+
                 timeout=3
             )
 
-    except Exception:
-        pass
+            if result.returncode != 0:
+
+                print(
+                    "Xray reset error:",
+                    result.stderr
+                )
+
+    except Exception as e:
+
+        print(
+            "Stats reset error:",
+            e
+        )
 
 
 # =========================================================
@@ -663,10 +702,6 @@ def stats_collector():
             c = conn.cursor()
 
             need_restart = False
-
-            # -----------------------------------------------
-            # تمام کاربران
-            # -----------------------------------------------
 
             c.execute("""
                 SELECT
@@ -693,20 +728,15 @@ def stats_collector():
                     )
                 )
 
-                # -------------------------------------------
-                # کاربر ترافیک داشته
-                # -------------------------------------------
+                # -----------------------------------------
+                # ترافیک واقعی
+                # -----------------------------------------
 
                 if current_traffic > 0:
 
-                    # آنلاین
                     ONLINE_USERS[
                         username
                     ] = time.time()
-
-                    # ---------------------------------------
-                    # مصرف واقعی را ثبت کن
-                    # ---------------------------------------
 
                     c.execute(
                         """
@@ -722,17 +752,13 @@ def stats_collector():
                         )
                     )
 
-                    # ---------------------------------------
-                    # بعد از ثبت مصرف، آمار Xray را صفر کن
-                    # ---------------------------------------
-
                     xray_reset_user_stats(
                         username
                     )
 
-                # -------------------------------------------
-                # اطلاعات جدید کاربر
-                # -------------------------------------------
+                # -----------------------------------------
+                # مقدار جدید
+                # -----------------------------------------
 
                 c.execute(
                     """
@@ -760,20 +786,23 @@ def stats_collector():
                     updated["used_bytes"] or 0
                 )
 
-                # -------------------------------------------
+                enabled = int(
+                    updated["enabled"] or 0
+                )
+
+                # -----------------------------------------
                 # بررسی حجم
-                # -------------------------------------------
+                # -----------------------------------------
 
                 if quota_gb > 0:
 
                     quota_bytes = int(
-                        quota_gb *
-                        (1024 ** 3)
+                        quota_gb * (1024 ** 3)
                     )
 
                     if used_bytes >= quota_bytes:
 
-                        if updated["enabled"] == 1:
+                        if enabled == 1:
 
                             c.execute(
                                 """
@@ -784,7 +813,6 @@ def stats_collector():
                                 (user_id,)
                             )
 
-                            # دیگر Online نمایش داده نشود
                             ONLINE_USERS.pop(
                                 username,
                                 None
@@ -794,19 +822,43 @@ def stats_collector():
 
                             print(
                                 "[QUOTA] "
-                                f"User '{username}' "
-                                f"reached quota "
-                                f"({quota_gb} GB) "
-                                "and was disabled."
+                                f"{username} reached "
+                                f"{quota_gb} GB"
                             )
+
+            # -----------------------------------------
+            # پاکسازی Online های قدیمی
+            # -----------------------------------------
+
+            now = time.time()
+
+            expired_online = []
+
+            for username, last_seen in list(
+                ONLINE_USERS.items()
+            ):
+
+                if (
+                    now - last_seen
+                ) >= ONLINE_THRESHOLD:
+
+                    expired_online.append(
+                        username
+                    )
+
+            for username in expired_online:
+
+                ONLINE_USERS.pop(
+                    username,
+                    None
+                )
 
             conn.commit()
             conn.close()
 
-            # -----------------------------------------------
-            # اگر حجم کاربری تمام شد
-            # Xray با لیست جدید کاربران اجرا شود
-            # -----------------------------------------------
+            # -----------------------------------------
+            # اعمال تغییرات Xray
+            # -----------------------------------------
 
             if need_restart:
 
@@ -879,10 +931,6 @@ http {{
 
         server_name _;
 
-        # -----------------------------------------------
-        # VLESS WebSocket
-        # -----------------------------------------------
-
         location ~ ^/ws {{
 
             proxy_redirect off;
@@ -908,10 +956,6 @@ http {{
             proxy_send_timeout 86400s;
 
         }}
-
-        # -----------------------------------------------
-        # Flask Panel
-        # -----------------------------------------------
 
         location / {{
 
@@ -990,7 +1034,6 @@ def make_all_vless_configs(user, host):
     u_uuid = user["uuid"]
     name = user["name"]
 
-    # فقط نام کانفیگ‌ها تغییر کرده است
     def config_remark(number):
         remark_text = (
             f"کانفیـگ پرسرعـت | "
@@ -1220,7 +1263,7 @@ def make_all_vless_configs(user, host):
 
 
 # =========================================================
-# روت‌ها
+# روت اصلی
 # =========================================================
 
 @app.route("/")
@@ -1314,28 +1357,41 @@ def dashboard():
             url_for("login")
         )
 
-    users = get_all_users()
+    # مهم:
+    # Dashboard قبلاً کاربران خام را می‌گرفت.
+    # حالا اطلاعات مصرف و Online هم به آن داده می‌شود.
+
+    raw_users = get_all_users()
+
+    users = [
+        enrich_user(u)
+        for u in raw_users
+    ]
 
     total_gb = sum(
         float(u["quota_gb"] or 0)
-        for u in users
+        for u in raw_users
     )
 
     total_used = sum(
         int(u["used_bytes"] or 0)
-        for u in users
+        for u in raw_users
     ) / (1024 ** 3)
 
     active_count = sum(
         1
         for u in users
-        if u["enabled"] == 1
+        if (
+            u["enabled"] == 1
+            and
+            not u["is_expired"]
+        )
     )
 
     online_count = sum(
         1
         for u in users
-        if is_user_online(u["name"])
+        if u["is_online"]
     )
 
     return render_template(
@@ -1477,9 +1533,34 @@ def api_online_users():
                 0
             )
 
-            seconds_ago = int(
-                now - last_seen
+            seconds_ago = max(
+                0,
+                int(
+                    now - last_seen
+                )
             )
+
+            quota_gb = float(
+                u["quota_gb"] or 0
+            )
+
+            used_gb = round(
+                int(u["used_bytes"] or 0)
+                / (1024 ** 3),
+                2
+            )
+
+            percent = 0
+
+            if quota_gb > 0:
+
+                percent = min(
+                    100,
+                    round(
+                        (used_gb / quota_gb) * 100,
+                        1
+                    )
+                )
 
             online.append({
 
@@ -1487,15 +1568,19 @@ def api_online_users():
 
                 "name": u["name"],
 
-                "used_gb": round(
-                    u["used_bytes"]
-                    / (1024 ** 3),
-                    2
+                "used_gb": used_gb,
+
+                "quota_gb": quota_gb,
+
+                "remaining_gb": max(
+                    0,
+                    round(
+                        quota_gb - used_gb,
+                        2
+                    )
                 ),
 
-                "quota_gb": float(
-                    u["quota_gb"] or 0
-                ),
+                "percent": percent,
 
                 "seconds_ago": seconds_ago,
 
@@ -1510,6 +1595,41 @@ def api_online_users():
         "count": len(online),
 
         "users": online
+
+    })
+
+
+# =========================================================
+# API وضعیت تمام کاربران
+# =========================================================
+
+@app.route("/api/users_status")
+def api_users_status():
+
+    if "admin" not in session:
+
+        return jsonify({
+            "status": "error"
+        }), 401
+
+    users = [
+        enrich_user(u)
+        for u in get_all_users()
+    ]
+
+    return jsonify({
+
+        "status": "success",
+
+        "count": len(users),
+
+        "online_count": sum(
+            1
+            for u in users
+            if u["is_online"]
+        ),
+
+        "users": users
 
     })
 
@@ -1757,639 +1877,4 @@ def add_user():
         return jsonify({
             "status": "error",
             "message": "این نام کاربری قبلاً وجود دارد"
-        }), 400
-
-    except Exception as e:
-
-        return jsonify({
-            "status": "error",
-            "message": str(e)
-        }), 500
-
-
-# =========================================================
-# ویرایش کاربر / حجم
-# =========================================================
-
-@app.route(
-    "/api/edit_user/<int:user_id>",
-    methods=["POST"]
-)
-def edit_user(user_id):
-
-    if "admin" not in session:
-
-        return jsonify({
-            "status": "error"
-        }), 401
-
-    data = request.get_json(
-        silent=True
-    ) or {}
-
-    try:
-
-        new_quota = float(
-            data.get(
-                "quota_gb",
-                0
-            )
-        )
-
-        new_days = int(
-            data.get(
-                "expire_days",
-                0
-            )
-        )
-
-    except Exception:
-
-        return jsonify({
-            "status": "error",
-            "message": "مقادیر نامعتبر"
-        }), 400
-
-    if new_quota <= 0:
-
-        return jsonify({
-            "status": "error",
-            "message": "حجم باید بیشتر از صفر باشد"
-        }), 400
-
-    if new_days <= 0:
-
-        return jsonify({
-            "status": "error",
-            "message": "روز باید بیشتر از صفر باشد"
-        }), 400
-
-    try:
-
-        conn = get_db()
-        c = conn.cursor()
-
-        c.execute(
-            """
-            UPDATE users
-            SET
-                quota_gb = ?,
-                expire_days = ?
-            WHERE id = ?
-            """,
-
-            (
-                new_quota,
-                new_days,
-                user_id
-            )
-        )
-
-        if c.rowcount == 0:
-
-            conn.close()
-
-            return jsonify({
-                "status": "error",
-                "message": "کاربر یافت نشد"
-            }), 404
-
-        conn.commit()
-        conn.close()
-
-        return jsonify({
-            "status": "success",
-            "message": "حجم و مدت کاربر با موفقیت تغییر کرد"
-        })
-
-    except Exception as e:
-
-        return jsonify({
-            "status": "error",
-            "message": str(e)
-        }), 500
-
-
-# =========================================================
-# صفر کردن مصرف کاربر
-# =========================================================
-
-@app.route(
-    "/api/reset_user/<int:user_id>",
-    methods=["POST"]
-)
-def reset_user(user_id):
-
-    if "admin" not in session:
-
-        return jsonify({
-            "status": "error"
-        }), 401
-
-    try:
-
-        conn = get_db()
-        c = conn.cursor()
-
-        c.execute(
-            """
-            SELECT name
-            FROM users
-            WHERE id = ?
-            """,
-            (user_id,)
-        )
-
-        row = c.fetchone()
-
-        if not row:
-
-            conn.close()
-
-            return jsonify({
-                "status": "error",
-                "message": "کاربر یافت نشد"
-            }), 404
-
-        username = row["name"]
-
-        # آمار Xray را هم صفر کن
-        xray_reset_user_stats(
-            username
-        )
-
-        # مصرف دیتابیس صفر شود
-        c.execute(
-            """
-            UPDATE users
-            SET used_bytes = 0
-            WHERE id = ?
-            """,
-            (user_id,)
-        )
-
-        conn.commit()
-        conn.close()
-
-        ONLINE_USERS.pop(
-            username,
-            None
-        )
-
-        return jsonify({
-            "status": "success",
-            "message": "ترافیک کاربر صفر شد"
-        })
-
-    except Exception as e:
-
-        return jsonify({
-            "status": "error",
-            "message": str(e)
-        }), 500
-
-
-# =========================================================
-# حذف کاربر
-# =========================================================
-
-@app.route(
-    "/api/delete_user/<int:user_id>",
-    methods=["POST"]
-)
-def delete_user(user_id):
-
-    if "admin" not in session:
-
-        return jsonify({
-            "status": "error"
-        }), 401
-
-    conn = get_db()
-    c = conn.cursor()
-
-    c.execute(
-        """
-        SELECT name
-        FROM users
-        WHERE id = ?
-        """,
-        (user_id,)
-    )
-
-    row = c.fetchone()
-
-    if row:
-
-        ONLINE_USERS.pop(
-            row["name"],
-            None
-        )
-
-    c.execute(
-        """
-        DELETE FROM users
-        WHERE id = ?
-        """,
-        (user_id,)
-    )
-
-    conn.commit()
-    conn.close()
-
-    restart_xray()
-
-    return jsonify({
-        "status": "success",
-        "message": "کاربر با موفقیت حذف شد"
-    })
-
-
-# =========================================================
-# فعال / غیرفعال کردن کاربر
-# =========================================================
-
-@app.route(
-    "/api/toggle_user/<int:user_id>",
-    methods=["POST"]
-)
-def toggle_user(user_id):
-
-    if "admin" not in session:
-
-        return jsonify({
-            "status": "error"
-        }), 401
-
-    conn = get_db()
-    c = conn.cursor()
-
-    c.execute(
-        """
-        SELECT
-            name,
-            enabled
-        FROM users
-        WHERE id = ?
-        """,
-        (user_id,)
-    )
-
-    row = c.fetchone()
-
-    if not row:
-
-        conn.close()
-
-        return jsonify({
-            "status": "error",
-            "message": "کاربر یافت نشد"
-        }), 404
-
-    new_val = (
-        0
-        if row["enabled"] == 1
-        else 1
-    )
-
-    c.execute(
-        """
-        UPDATE users
-        SET enabled = ?
-        WHERE id = ?
-        """,
-        (
-            new_val,
-            user_id
-        )
-    )
-
-    conn.commit()
-    conn.close()
-
-    # اگر غیرفعال شد، Online هم نباشد
-    if new_val == 0:
-
-        ONLINE_USERS.pop(
-            row["name"],
-            None
-        )
-
-    restart_xray()
-
-    return jsonify({
-        "status": "success",
-        "new_state": new_val
-    })
-
-
-# =========================================================
-# کانفیگ کاربر
-# =========================================================
-
-@app.route(
-    "/api/user_config/<int:user_id>"
-)
-def user_config(user_id):
-
-    if "admin" not in session:
-
-        return jsonify({
-            "status": "error"
-        }), 401
-
-    conn = get_db()
-    c = conn.cursor()
-
-    c.execute(
-        """
-        SELECT *
-        FROM users
-        WHERE id = ?
-        """,
-        (user_id,)
-    )
-
-    user = c.fetchone()
-
-    conn.close()
-
-    if not user:
-
-        return jsonify({
-            "status": "error",
-            "message": "کاربر یافت نشد"
-        }), 404
-
-    host = request.host.split(":")[0]
-
-    configs = make_all_vless_configs(
-        dict(user),
-        host
-    )
-
-    sub_link = (
-        f"{request.host_url}"
-        f"sub/{user['uuid']}"
-    )
-
-    return jsonify({
-
-        "status": "success",
-
-        "configs": configs,
-
-        "sub": sub_link,
-
-        "user": dict(user)
-
-    })
-
-
-# =========================================================
-# Subscription
-# =========================================================
-
-@app.route(
-    "/sub/<user_uuid>"
-)
-def subscription(user_uuid):
-
-    conn = get_db()
-    c = conn.cursor()
-
-    c.execute(
-        """
-        SELECT *
-        FROM users
-        WHERE uuid = ?
-        """,
-        (user_uuid,)
-    )
-
-    user = c.fetchone()
-
-    conn.close()
-
-    if not user:
-
-        return (
-            "User not found",
-            404
-        )
-
-    if user["enabled"] == 0:
-
-        return (
-            "User not found or disabled",
-            404
-        )
-
-    # -----------------------------------------------
-    # User-Agent
-    # -----------------------------------------------
-
-    ua = request.headers.get(
-        "User-Agent",
-        ""
-    ).lower()
-
-    client_keywords = [
-
-        "v2ray",
-        "clash",
-        "sing-box",
-        "hiddify",
-        "nekobox",
-        "streisand",
-        "foxray",
-        "shadowrocket",
-        "v2box"
-
-    ]
-
-    is_client = any(
-        k in ua
-        for k in client_keywords
-    )
-
-    host = request.host.split(":")[0]
-
-    user_dict = dict(user)
-
-    all_configs = make_all_vless_configs(
-        user_dict,
-        host
-    )
-
-    # -----------------------------------------------
-    # اگر کلاینت VPN درخواست کرد
-    # -----------------------------------------------
-
-    if is_client:
-
-        raw_text = "\n".join(
-            item["config"]
-            for item in all_configs
-        )
-
-        encoded = base64.b64encode(
-            raw_text.encode()
-        ).decode()
-
-        return Response(
-            encoded,
-            mimetype="text/plain"
-        )
-
-    # -----------------------------------------------
-    # اطلاعات صفحه ساب
-    # -----------------------------------------------
-
-    try:
-
-        created_dt = datetime.fromisoformat(
-            user_dict["created_at"]
-        )
-
-        elapsed_days = (
-            datetime.now() - created_dt
-        ).days
-
-        days_left = max(
-            0,
-            user_dict["expire_days"]
-            - elapsed_days
-        )
-
-    except Exception:
-
-        days_left = user_dict[
-            "expire_days"
-        ]
-
-    used_gb = round(
-        user_dict["used_bytes"]
-        / (1024 ** 3),
-        2
-    )
-
-    quota_gb = float(
-        user_dict["quota_gb"]
-    )
-
-    remaining_gb = max(
-        0.0,
-        round(
-            quota_gb - used_gb,
-            2
-        )
-    )
-
-    if quota_gb > 0:
-
-        percent = (
-            used_gb
-            / quota_gb
-            * 100
-        )
-
-    else:
-
-        percent = 0
-
-    percent = min(
-        100,
-        percent
-    )
-
-    raw_text = "\n".join(
-        item["config"]
-        for item in all_configs
-    )
-
-    encoded_sub = base64.b64encode(
-        raw_text.encode()
-    ).decode()
-
-    return render_template(
-
-        "subscription.html",
-
-        user_name=user_dict["name"],
-
-        used_gb=used_gb,
-
-        quota_gb=quota_gb,
-
-        remaining_gb=remaining_gb,
-
-        days_left=days_left,
-
-        percent=round(
-            percent,
-            1
-        ),
-
-        configs=all_configs,
-
-        sub_raw=encoded_sub,
-
-        sub_url=request.url
-
-    )
-
-
-# =========================================================
-# Health Check
-# =========================================================
-
-@app.route("/health")
-def health():
-
-    return jsonify({
-        "status": "ok",
-        "xray": os.path.exists(
-            "/usr/local/bin/xray/xray"
-        ),
-        "users": len(
-            get_all_users()
-        )
-    })
-
-
-# =========================================================
-# شروع برنامه
-# =========================================================
-
-if __name__ == "__main__":
-
-    print(
-        "======================================"
-    )
-
-    print(
-        "        PABLO PANEL STARTING"
-    )
-
-    print(
-        "======================================"
-    )
-
-    # دیتابیس
-    init_db()
-
-    # Xray
-    restart_xray()
-
-    # Nginx
-    start_nginx()
-
-    # جمع‌آوری مصرف
-    start_stats_collector()
-
-    # Flask
-    app.run(
-        host="127.0.0.1",
-        port=FLASK_PORT
-    )
+        }),
